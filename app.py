@@ -7,7 +7,19 @@ from datetime import datetime
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="centered")
 
+# Streamlit এর ডিফল্ট হেডার, ফর্ক বাটন, ফুটার এবং ব্র্যান্ডিং হাইড করার জন্য CSS
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stAppToolbar {visibility: hidden;}
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 st.title("📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম")
+st.caption("✨ Powered by **Job Efforts**")
 
 RESULT_FILE = "results.csv"
 QUESTIONS_FILE = "saved_questions.csv"
@@ -29,7 +41,10 @@ if 'exam_submitted' not in st.session_state:
 if 'last_result_data' not in st.session_state:
     st.session_state['last_result_data'] = None
 
-st.sidebar.header("⚙️ প্যানেল মেনু")
+if 'selected_exam_subject' not in st.session_state:
+    st.session_state['selected_exam_subject'] = ""
+
+st.sidebar.header("⚙️ মেনু")
 
 admin_menu = None
 student_menu = None
@@ -42,6 +57,7 @@ if st.session_state['is_admin_logged_in']:
         st.session_state['is_admin_logged_in'] = False
         st.session_state['confirmed_student_name'] = ""
         st.session_state['exam_submitted'] = False
+        st.session_state['selected_exam_subject'] = ""
         st.rerun()
         
     admin_menu = st.sidebar.radio("অ্যাডমিন কন্ট্রোল প্যানেল:", [
@@ -50,21 +66,22 @@ if st.session_state['is_admin_logged_in']:
     ])
     is_admin = True
 else:
-    entered_password = st.sidebar.text_input("অ্যাডমিন পাসওয়ার্ড দিন (শিক্ষকদের জন্য):", type="password", key="admin_pwd_input")
-    
-    if st.sidebar.button("🔑 লগইন করুন"):
-        if entered_password == ADMIN_PASSWORD:
-            st.session_state['is_admin_logged_in'] = True
-            st.rerun()
-        else:
-            st.sidebar.error("❌ ভুল পাসওয়ার্ড!")
-    
-    st.sidebar.divider()
+    # শিক্ষার্থীরা শুধু তাদের নির্দিষ্ট মেনুটাই দেখতে পাবে
     student_menu = st.sidebar.radio("শিক্ষার্থী মেনু:", [
         "📝 পরীক্ষা দিন",
         "🏆 ক্লাসের মেধা তালিকা (Leaderboard)"
     ])
     is_admin = False
+    
+    # সাধারণ শিক্ষার্থীদের চোখের আড়ালে রাখার জন্য অ্যাডমিন লগইন অপশনটি নিচের দিকে একটি ড্রপডাউনে রাখা হয়েছে
+    with st.sidebar.expander("🔐 শিক্ষক/অ্যাডমিন লগইন"):
+        entered_password = st.text_input("পাসওয়ার্ড দিন:", type="password", key="admin_pwd_input")
+        if st.button("🔑 লগইন করুন"):
+            if entered_password == ADMIN_PASSWORD:
+                st.session_state['is_admin_logged_in'] = True
+                st.rerun()
+            else:
+                st.error("❌ ভুল পাসওয়ার্ড!")
 
 # ==========================================
 # 📊 ১. অ্যাডমিন: মেধা তালিকা ও রিপোর্ট সেক্টর
@@ -366,15 +383,14 @@ else:
             if st.session_state['exam_submitted']:
                 res_info = st.session_state['last_result_data']
                 if res_info:
-                    # হোমে ফিরে যাওয়ার বাটনটি উপরে বাম পাশে দেওয়া হয়েছে
                     if st.button("⬅️ হোমে ফিরে যান / নতুন পরীক্ষা", type="secondary"):
                         st.session_state['exam_submitted'] = False
                         st.session_state['confirmed_student_name'] = ""
+                        st.session_state['selected_exam_subject'] = ""
                         st.session_state['last_result_data'] = None
                         st.rerun()
 
                     st.subheader(f"🎉 অভিনন্দন, **{res_info['student_name']}**! আপনার পরীক্ষা সফলভাবে জমা হয়েছে।")
-                    # ভগ্নাংশ আকারে প্রাপ্ত ফলাফল দেখানো (যেমন: ৩ / ১০)
                     st.markdown(f"### 🏆 আপনার প্রাপ্ত ফলাফল: **{res_info['score']} / {res_info['total']}** (বিষয়: {res_info['subject']})")
                     st.write("---")
                     
@@ -399,6 +415,7 @@ else:
                     if st.button("🔄 নতুন পরীক্ষা শুরু করুন / হোমে ফিরে যান", type="primary", key="bottom_home_btn"):
                         st.session_state['exam_submitted'] = False
                         st.session_state['confirmed_student_name'] = ""
+                        st.session_state['selected_exam_subject'] = ""
                         st.session_state['last_result_data'] = None
                         st.rerun()
             else:
@@ -408,6 +425,7 @@ else:
                     selected_subject = st.selectbox("কোন বিষয়ের পরীক্ষা দিতে চান তা সিলেক্ট করুন:", available_subjects)
                     st.write("---")
                     
+                    # সুনির্দিষ্ট বিষয়ের প্রশ্ন ফিল্টার করা
                     df = all_q_df[all_q_df['Subject'] == selected_subject].reset_index(drop=True)
                     
                     duration = 10
@@ -429,8 +447,8 @@ else:
                             if st.button("এগিয়ে যান ➔ পরীক্ষা শুরু করুন", type="primary"):
                                 if student_name.strip():
                                     st.session_state['confirmed_student_name'] = student_name.strip()
-                                    st.session_state['exam_start_time'] = time.time()
                                     st.session_state['selected_exam_subject'] = selected_subject
+                                    st.session_state['exam_start_time'] = time.time()
                                     st.rerun()
                                 else:
                                     st.error("⚠️ অনুগ্রহ করে আপনার নাম লিখুন।")
@@ -449,7 +467,6 @@ else:
                     current_student = st.session_state['confirmed_student_name']
                     active_df = df.copy()
                     
-                    # টাইমারটি সবসময় বাঁ পাশের সাইডবারে উপরে ফিক্সড রাখা হলো যাতে স্ক্রল করলেও দেখা যায়
                     total_seconds = duration * 60
                     
                     if 'exam_start_time' not in st.session_state or st.session_state.get('current_sub') != selected_subject:
@@ -465,7 +482,7 @@ else:
                     st.sidebar.markdown("---")
                     st.sidebar.subheader("⏱️ পরীক্ষার লাইভ টাইমার")
                     st.sidebar.markdown(f"⏳ **বাকি সময়:**\n### `{mins:02d} মিনিট {secs:02d} সেকেন্ড`")
-                    st.sidebar.caption(f"পরীক্ষার্থী: {current_student}")
+                    st.sidebar.caption(f"পরীক্ষার্থী: {current_student} ({selected_subject})")
                     
                     st.success(f"স্বাগতম, **{current_student}**! **{selected_subject}** বিষয়ের পরীক্ষা শুরু করুন।")
                     st.divider()
