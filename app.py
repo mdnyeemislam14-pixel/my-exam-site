@@ -9,15 +9,11 @@ st.title("📝 অনলাইন মডেল টেস্ট")
 # ==========================================
 # 🔐 অ্যাডমিন সিকিউরিটি পাসওয়ার্ড সেটআপ
 # ==========================================
-ADMIN_PASSWORD = "1234"  # আপনি চাইলে এই পাসওয়ার্ডটি পরে পরিবর্তন করে নিতে পারেন
+ADMIN_PASSWORD = "1234"
 
-# সাইডবার শুধু অ্যাডমিনদের জন্য
 st.sidebar.header("⚙️ শিক্ষক / অ্যাডমিন প্যানেল")
 entered_password = st.sidebar.text_input("অ্যাডমিন পাসওয়ার্ড দিন:", type="password")
 
-df = None
-
-# পাসওয়ার্ড মিললেই কেবল প্রশ্ন সেটআপ বা আপলোড করার অপশন দেখা যাবে
 if entered_password == ADMIN_PASSWORD:
     st.sidebar.success("✅ অ্যাডমিন মোড সক্রিয়!")
     
@@ -68,60 +64,59 @@ if entered_password == ADMIN_PASSWORD:
                     })
             
             if parsed_questions:
-                df = pd.DataFrame(parsed_questions)
-                # সেশনে প্রশ্নগুলো সেভ করে রাখা যাতে পাসওয়ার্ড ছদ্মবেশে হারিয়ে না যায়
-                st.session_state['saved_df'] = df
+                temp_df = pd.DataFrame(parsed_questions)
+                st.session_state['saved_df'] = temp_df
+                st.sidebar.success("✅ টেক্সট থেকে প্রশ্ন সফলভাবে সেভ হয়েছে!")
 
     else:
         uploaded_file = st.sidebar.file_uploader("questions.xlsx বা csv ফাইল আপলোড করুন:", type=["xlsx", "csv"])
         if uploaded_file is not None:
-            if uploaded_file.name.endswith('.csv'):
-                raw_df = pd.read_csv(uploaded_file)
-            else:
-                raw_df = pd.read_excel(uploaded_file)
+            try:
+                if uploaded_file.name.endswith('.csv'):
+                    raw_df = pd.read_csv(uploaded_file)
+                else:
+                    raw_df = pd.read_excel(uploaded_file)
                 
-            st.sidebar.subheader("🎯 প্রশ্ন ফিল্টার অপশন")
-            filter_type = st.sidebar.radio("কীভাবে প্রশ্ন সিলেক্ট করতে চান?", [
-                "সব প্রশ্ন দিয়ে পরীক্ষা",
-                "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন",
-                "ম্যানুয়ালি বেছে বেছে প্রশ্ন সিলেক্ট"
-            ])
-            
-            if filter_type == "সব প্রশ্ন দিয়ে পরীক্ষা":
-                df = raw_df
-            elif filter_type == "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন":
-                max_q = len(raw_df)
-                num_q = st.sidebar.number_input(f"কতটি প্রশ্ন রাখতে চান? (সর্বোচ্চ {max_q})", min_value=1, max_value=max_q, value=min(10, max_q))
-                df = raw_df.sample(n=num_q).reset_index(drop=True)
-            elif filter_type == "ম্যানুয়ালি বেছে বেছে প্রশ্ন সিলেক্ট":
-                selected_indices = st.sidebar.multiselect(
-                    "তালিকা থেকে প্রশ্নগুলো নির্বাচন করুন:",
-                    options=list(raw_df.index),
-                    format_func=lambda x: f"প্রশ্ন {x+1}: {raw_df.loc[x, 'Question'][:30]}..."
-                )
-                if selected_indices:
-                    df = raw_df.loc[selected_indices].reset_index(drop=True)
-            
-            if df is not None:
-                st.session_state['saved_df'] = df
-
-    # অ্যাডমিন যদি আগে প্রশ্ন সেট করে থাকেন, সেটি মেমোরিতে রাখা
-    if 'saved_df' in st.session_state and df is None:
-        df = st.session_state['saved_df']
+                # কলামের নামের অতিরিক্ত স্পেস বা টাইপিং ভুল এড়াতে নামগুলো ক্লিন করা
+                raw_df.columns = raw_df.columns.str.strip()
+                
+                st.sidebar.subheader("🎯 প্রশ্ন ফিল্টার অপশন")
+                filter_type = st.sidebar.radio("কীভাবে প্রশ্ন সিলেক্ট করতে চান?", [
+                    "সব প্রশ্ন দিয়ে পরীক্ষা",
+                    "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন",
+                    "ম্যানুয়ালি বেছে বেছে প্রশ্ন সিলেক্ট"
+                ], key="filter_radio")
+                
+                final_filtered_df = raw_df
+                
+                if filter_type == "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন":
+                    max_q = len(raw_df)
+                    num_q = st.sidebar.number_input(f"কতটি প্রশ্ন রাখতে চান? (সর্বোচ্চ {max_q})", min_value=1, max_value=max_q, value=min(10, max_q))
+                    final_filtered_df = raw_df.sample(n=num_q).reset_index(drop=True)
+                    
+                elif filter_type == "ম্যানুয়ালি বেছে বেছে প্রশ্ন সিলেক্ট":
+                    selected_indices = st.sidebar.multiselect(
+                        "তালিকা থেকে প্রশ্নগুলো নির্বাচন করুন:",
+                        options=list(raw_df.index),
+                        format_func=lambda x: f"প্রশ্ন {x+1}: {str(raw_df.loc[x, 'Question'])[:30]}..."
+                    )
+                    if selected_indices:
+                        final_filtered_df = raw_df.loc[selected_indices].reset_index(drop=True)
+                
+                if final_filtered_df is not None and not final_filtered_df.empty:
+                    st.session_state['saved_df'] = final_filtered_df
+                    st.sidebar.success("✅ প্রশ্ন সফলভাবে ফিল্টার ও সেভ করা হয়েছে!")
+            except Exception as e:
+                st.sidebar.error(f"ফাইল পড়তে সমস্যা হয়েছে: {e}")
 
 elif entered_password != "":
-    st.sidebar.error("❌ ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।")
-    # সাধারণ পরীক্ষার্থীরা যদি আগে প্রশ্ন সেট করা থাকে সেটি দেখতে পাবে, নতুন করে এডিট করতে পারবে না
-    if 'saved_df' in st.session_state:
-        df = st.session_state['saved_df']
-else:
-    # কেউ যদি পাসওয়ার্ড না দেয়, তবে আগের সেভ করা প্রশ্নগুলো লোড করে পরীক্ষা নেওয়ার জন্য প্রস্তুত রাখা
-    if 'saved_df' in st.session_state:
-        df = st.session_state['saved_df']
+    st.sidebar.error("❌ ভুল পাসওয়ার্ড!")
 
 # ==========================================
 # 📝 পরীক্ষার্থীদের জন্য মূল পরীক্ষার পেজ
 # ==========================================
+df = st.session_state.get('saved_df', None)
+
 if df is not None and not df.empty:
     st.info(f"🎉 **পরীক্ষার জন্য মোট {len(df)} টি প্রশ্ন প্রস্তুত আছে!**")
     
@@ -166,4 +161,4 @@ if df is not None and not df.empty:
             st.metric(label=f"{student_name}-এর মোট ফলাফল", value=f"{score} / {total}")
             st.balloons()
 else:
-    st.warning("⚠️ বর্তমানে কোনো প্রশ্ন সেট করা নেই। শিক্ষক মহোদয় পাসওয়ার্ড দিয়ে প্রশ্ন যুক্ত করলে পরীক্ষা শুরু হবে।")
+    st.warning("⚠️ বর্তমানে কোনো প্রশ্ন সেট করা নেই। শিক্ষক মহোদয় পাসওয়ার্ড দিয়ে ফাইল আপলোড বা প্রশ্ন যুক্ত করলে এখানে পরীক্ষা দেখা যাবে।")
