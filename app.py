@@ -9,25 +9,36 @@ st.set_page_config(page_title="অনলাইন পরীক্ষা প্�
 st.title("📝 অনলাইন মডেল টেস্ট")
 
 RESULT_FILE = "results.csv"
-QUESTIONS_FILE = "saved_questions.csv"  # প্রশ্ন স্থায়ীভাবে সেভ রাখার ফাইল
+QUESTIONS_FILE = "saved_questions.csv"
 ADMIN_PASSWORD = "1234"
 
 # ==========================================
-# 🔐 অ্যাডমিন সিকিউরিটি ও নেভিগেশন
+# 🔐 সেশন স্টেট ব্যবহার করে লগইন ম্যানেজমেন্ট
 # ==========================================
+if 'is_admin_logged_in' not in st.session_state:
+    st.session_state['is_admin_logged_in'] = False
+
 st.sidebar.header("⚙️ প্যানেল মেনু")
-entered_password = st.sidebar.text_input("অ্যাডমিন পাসওয়ার্ড দিন (শিক্ষকদের জন্য):", type="password")
 
-is_admin = (entered_password == ADMIN_PASSWORD)
-
-if is_admin:
+# যদি ইতিমধ্যে লগইন করা থাকে, তবে লগ আউট বাটন দেখাবে
+if st.session_state['is_admin_logged_in']:
     st.sidebar.success("✅ অ্যাডমিন মোড সক্রিয়!")
+    if st.sidebar.button("🚪 লগ আউট করুন (Log Out)"):
+        st.session_state['is_admin_logged_in'] = False
+        st.rerun()
+        
     admin_menu = st.sidebar.radio("অ্যাডমিন কন্ট্রোল প্যানেল:", [
         "📝 প্রশ্ন আপলোড ও সেটআপ",
         "📊 সকল শিক্ষার্থীর মেধা তালিকা ও রিপোর্ট"
     ])
+    is_admin = True
 else:
-    if entered_password != "":
+    entered_password = st.sidebar.text_input("অ্যাডমিন পাসওয়ার্ড দিন (শিক্ষকদের জন্য):", type="password")
+    
+    if entered_password == ADMIN_PASSWORD:
+        st.session_state['is_admin_logged_in'] = True
+        st.rerun()
+    elif entered_password != "":
         st.sidebar.error("❌ ভুল পাসওয়ার্ড!")
     
     st.sidebar.divider()
@@ -35,6 +46,7 @@ else:
         "📝 পরীক্ষা দিন",
         "🏆 ক্লাসের মেধা তালিকা (Leaderboard)"
     ])
+    is_admin = False
 
 # ==========================================
 # 📊 ১. অ্যাডমিন: মেধা তালিকা ও রিপোর্ট সেক্টর
@@ -144,7 +156,7 @@ else:
                 
                 if parsed_questions:
                     temp_df = pd.DataFrame(parsed_questions)
-                    temp_df.to_csv(QUESTIONS_FILE, index=False)  # ফাইলে স্থায়ীভাবে সেভ হলো
+                    temp_df.to_csv(QUESTIONS_FILE, index=False)
                     st.sidebar.success("✅ টেক্সট থেকে প্রশ্ন সফলভাবে ফাইলে সেভ হয়েছে!")
 
         else:
@@ -214,14 +226,14 @@ else:
                             if filter_type == "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন":
                                 final_filtered_df = sub_df.sample(n=num_q).reset_index(drop=True)
                             
-                            final_filtered_df.to_csv(QUESTIONS_FILE, index=False)  # ফাইলে স্থায়ীভাবে সেভ হলো
+                            final_filtered_df.to_csv(QUESTIONS_FILE, index=False)
                             st.sidebar.success("✅ প্রশ্ন সফলভাবে লক ও ফাইলে সেভ করা হয়েছে!")
                     else:
                         st.sidebar.error("⚠️ সঠিক কলাম রেঞ্জ পাওয়া যায়নি।")
                 except Exception as e:
                     st.sidebar.error(f"ফাইল পড়তে সমস্যা হয়েছে: {e}")
 
-    # পরীক্ষার্থীদের মূল পরীক্ষার পেজ (ফাইল থেকে প্রশ্ন লোড করা হবে)
+    # পরীক্ষার্থীদের মূল পরীক্ষার পেজ
     df = None
     if os.path.exists(QUESTIONS_FILE):
         df = pd.read_csv(QUESTIONS_FILE)
