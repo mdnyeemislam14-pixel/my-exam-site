@@ -66,6 +66,8 @@ if entered_password == ADMIN_PASSWORD:
             if parsed_questions:
                 temp_df = pd.DataFrame(parsed_questions)
                 st.session_state['saved_df'] = temp_df
+                if 'exam_active_df' in st.session_state:
+                    del st.session_state['exam_active_df']
                 st.sidebar.success("✅ টেক্সট থেকে প্রশ্ন সফলভাবে সেভ হয়েছে!")
 
     else:
@@ -91,7 +93,7 @@ if entered_password == ADMIN_PASSWORD:
                 for idx in range(0, total_cols, 6):
                     start_letter = get_column_letter(idx)
                     end_letter = get_column_letter(min(idx + 4, total_cols - 1))
-                    col_choices[idx] = f"কলাম {start_letter} থেকে {end_letter} (প্রশ্ন, ক, খ, ঘ)"
+                    col_choices[idx] = f"কলাম {start_letter} থেকে {end_letter} (প্রশ্ন, ক, খ, গ, ঘ)"
 
                 selected_start_idx = st.sidebar.selectbox(
                     "কোন সাবজেক্টের কলাম থেকে প্রশ্ন নিতে চান?",
@@ -123,8 +125,7 @@ if entered_password == ADMIN_PASSWORD:
                     if filter_type == "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন":
                         max_q = len(sub_df)
                         num_q = st.sidebar.number_input(f"কতটি প্রশ্ন রাখতে চান? (সর্বোচ্চ {max_q})", min_value=1, max_value=max_q, value=min(10, max_q))
-                        final_filtered_df = sub_df.sample(n=num_q).reset_index(drop=True)
-                        
+                        # এখানে সরাসরি স্যাম্পল না করে বাটনে ক্লিক করলে হবে
                     elif filter_type == "ম্যানুয়ালি বেছে বেছে প্রশ্ন সিলেক্ট":
                         selected_indices = st.sidebar.multiselect(
                             "তালিকা থেকে প্রশ্নগুলো নির্বাচন করুন:",
@@ -133,13 +134,16 @@ if entered_password == ADMIN_PASSWORD:
                         )
                         if selected_indices:
                             final_filtered_df = sub_df.loc[selected_indices].reset_index(drop=True)
-                    
-                    if final_filtered_df is not None and not final_filtered_df.empty:
+
+                    # 🚀 চূড়ান্ত সাবমিট বাটন (এর মাধ্যমে প্রশ্ন ফিক্সড হয়ে যাবে)
+                    if st.sidebar.button("📌 এই প্রশ্নগুলো দিয়ে পরীক্ষা সেট করুন"):
+                        if filter_type == "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন":
+                            final_filtered_df = sub_df.sample(n=num_q).reset_index(drop=True)
+                        
                         st.session_state['saved_df'] = final_filtered_df
-                        # নতুন প্রশ্ন আপলোড বা ফিল্টার করলে আগের পরীক্ষার লক ক্লিয়ার করা
                         if 'exam_active_df' in st.session_state:
                             del st.session_state['exam_active_df']
-                        st.sidebar.success("✅ সাবজেক্টের প্রশ্ন সফলভাবে সিলেক্ট ও সেভ হয়েছে!")
+                        st.sidebar.success("✅ প্রশ্ন সফলভাবে লক ও সেভ করা হয়েছে!")
                 else:
                     st.sidebar.error("⚠️ সঠিক কলাম রেঞ্জ পাওয়া যায়নি।")
             except Exception as e:
@@ -203,8 +207,7 @@ if df is not None and not df.empty:
             st.metric(label=f"{student_name}-এর মোট ফলাফল", value=f"{score} / {total}")
             st.balloons()
             
-            # পরীক্ষা শেষ ও সাবমিট হওয়ার পর লক ক্লিয়ার করে দেওয়া যাতে পরেরবার নতুন প্রশ্ন আসে
             if 'exam_active_df' in st.session_state:
                 del st.session_state['exam_active_df']
 else:
-    st.warning("⚠️ বর্তমানে কোনো প্রশ্ন সেট করা নেই। শিক্ষক মহোদয় পাসওয়ার্ড দিয়ে ফাইল আপলোড বা সাবজেক্ট সিলেক্ট করলে এখানে পরীক্ষা দেখা যাবে।")
+    st.warning("⚠️ বর্তমানে কোনো প্রশ্ন সেট করা নেই। শিক্ষক মহোদয় পাসওয়ার্ড দিয়ে ফাইল আপলোড ও 'এই প্রশ্নগুলো দিয়ে পরীক্ষা সেট করুন' বাটনে ক্লিক করলে এখানে পরীক্ষা দেখা যাবে।")
