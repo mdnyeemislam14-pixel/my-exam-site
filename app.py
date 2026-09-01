@@ -20,6 +20,9 @@ ADMIN_PASSWORD = "1234"
 if 'is_admin_logged_in' not in st.session_state:
     st.session_state['is_admin_logged_in'] = False
 
+if 'confirmed_student_name' not in st.session_state:
+    st.session_state['confirmed_student_name'] = ""
+
 st.sidebar.header("⚙️ প্যানেল মেনু")
 
 admin_menu = None
@@ -29,9 +32,10 @@ student_menu = None
 if st.session_state['is_admin_logged_in']:
     st.sidebar.success("✅ অ্যাডমিন মোড সক্রিয়!")
     
-    # লগ আউট বাটন (সঠিকভাবে সেশন ক্লিয়ার করে রিলোড করার ব্যবস্থা)
+    # লগ আউট বাটন
     if st.sidebar.button("🚪 লগ আউট করুন (Log Out)"):
         st.session_state['is_admin_logged_in'] = False
+        st.session_state['confirmed_student_name'] = ""
         st.rerun()
         
     admin_menu = st.sidebar.radio("অ্যাডমিন কন্ট্রোল প্যানেল:", [
@@ -40,10 +44,9 @@ if st.session_state['is_admin_logged_in']:
     ])
     is_admin = True
 else:
-    # পাসওয়ার্ড ইনপুট বক্স (স্বয়ংক্রিয়ভাবে লগইন না হয়ে সাবমিট বাটন দিতে হবে)
+    # পাসওয়ার্ড ইনপুট বক্স ও লগইন বাটন
     entered_password = st.sidebar.text_input("অ্যাডমিন পাসওয়ার্ড দিন (শিক্ষকদের জন্য):", type="password", key="admin_pwd_input")
     
-    # পাসওয়ার্ডের জায়গায় নির্দিষ্ট লগইন বাটন
     if st.sidebar.button("🔑 লগইন করুন"):
         if entered_password == ADMIN_PASSWORD:
             st.session_state['is_admin_logged_in'] = True
@@ -130,7 +133,6 @@ else:
     if is_admin:
         st.sidebar.markdown("### 📚 নতুন বিষয় ও প্রশ্ন সংযোজন")
         
-        # বিষয়ের নাম ড্রপডাউন মেনু
         subject_options = [
             "বাংলা", 
             "English", 
@@ -228,7 +230,6 @@ else:
                     
                     st.sidebar.subheader("📚 কলাম সেটআপ (আপনার ফাইল অনুযায়ী)")
                     
-                    # নির্দিষ্ট কলাম রেঞ্জ ম্যাপিং (আপনার দেওয়া রিকোয়ারমেন্ট অনুযায়ী)
                     predefined_columns = {
                         "বাংলা (A - F)": 0,
                         "English (G - L)": 6,
@@ -307,7 +308,6 @@ else:
                 except Exception as e:
                     st.sidebar.error(f"ফাইল পড়তে সমস্যা হয়েছে: {e}")
 
-        # অ্যাডমিন প্যানেলে স্থায়ীভাবে সংরক্ষিত বিষয়সমূহ ও প্রশ্ন ডিলিট করার ব্যবস্থা
         st.write("---")
         st.subheader("📂 স্থায়ীভাবে সংরক্ষিত বিষয়সমূহ ও প্রশ্ন ব্যবস্থাপনা")
         st.info("💡 এখানে সেভ করা প্রশ্নগুলো সার্ভারে নিরাপদভাবে সংরক্ষিত থাকে। আপনি নিজে 'মুছুন' বাটন ক্লিক না করা পর্যন্ত এগুলো মুছে যাবে না।")
@@ -375,16 +375,22 @@ else:
                 
                 st.info(f"📌 **বিষয়:** {selected_subject} | ⏱️ **নির্ধারিত সময়:** {duration} মিনিট | 🎯 **মোট মার্ক:** {total_marks}")
                 
-                student_name = st.text_input("পরীক্ষার্থীর নাম লিখুন:", placeholder="আপনার পূর্ণ নাম")
+                student_name = st.text_input("পরীক্ষার্থীর নাম লিখুন:", placeholder="আপনার পূর্ণ নাম", key="input_student_name")
                 
-                if student_name:
+                if student_name.strip():
+                    if st.button("এগিয়ে যান ➔ পরীক্ষা শুরু করুন"):
+                        st.session_state['confirmed_student_name'] = student_name.strip()
+                        st.session_state['exam_start_time'] = time.time()  # পরীক্ষার শুরুর সঠিক সময় সেট করা
+                        st.rerun()
+
+                if st.session_state['confirmed_student_name']:
+                    current_student = st.session_state['confirmed_student_name']
                     active_df = df.copy()
                     
-                    st.success(f"স্বাগতম, **{student_name}**! **{selected_subject}** বিষয়ের পরীক্ষা শুরু করুন।")
+                    st.success(f"স্বাগতম, **{current_student}**! **{selected_subject}** বিষয়ের পরীক্ষা শুরু করুন।")
                     st.divider()
                     
                     timer_placeholder = st.empty()
-                    
                     total_seconds = duration * 60
                     
                     if 'exam_start_time' not in st.session_state or st.session_state.get('current_sub') != selected_subject:
@@ -417,7 +423,7 @@ else:
                         total = total_marks
                         
                         st.markdown("---")
-                        st.subheader(f"🎉 অভিনন্দন, **{student_name}**! আপনার পরীক্ষা সফলভাবে জমা হয়েছে।")
+                        st.subheader(f"🎉 অভিনন্দন, **{current_student}**! আপনার পরীক্ষা সফলভাবে জমা হয়েছে।")
                         
                         for i, row in active_df.iterrows():
                             ans = user_answers.get(i)
@@ -425,7 +431,8 @@ else:
                             if ans and ans.strip() == correct.strip():
                                 score += 1
 
-                        st.success(f"🏆 **আপনার প্রাপ্ত ফলাফল:** `{score}` / `{total}` (বিষয়: {selected_subject})")
+                        # ফলাফল বড় ও বোল্ড আকারে প্রদর্শন (যেমন: **১০ এর মধ্যে ৫**)
+                        st.markdown(f"### 🏆 আপনার প্রাপ্ত ফলাফল: **{total} এর মধ্যে {score}** (বিষয়: {selected_subject})")
                         st.write("---")
                         
                         st.subheader("📊 বিস্তারিত উত্তরমালা ও মূল্যায়ন")
@@ -450,7 +457,7 @@ else:
                         
                         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         new_result = pd.DataFrame([{
-                            "Student Name": student_name,
+                            "Student Name": current_student,
                             "Subject": selected_subject,
                             "Score": score,
                             "Total Marks": total,
@@ -464,5 +471,12 @@ else:
                             updated_res = new_result
                             
                         updated_res.to_csv(RESULT_FILE, index=False)
+                        
+                        st.session_state['confirmed_student_name'] = ""
+                    
+                    # টাইমার প্রতি সেকেন্ডে কমার জন্য অটো রিলোড লজিক
+                    if remaining_seconds > 0:
+                        time.sleep(1)
+                        st.rerun()
         else:
             st.warning("⚠️ বর্তমানে কোনো বিষয়ের পরীক্ষা সেট করা নেই। শিক্ষক মহোদয় পাসওয়ার্ড দিয়ে একাধিক বিষয়ের প্রশ্ন ও সময় সেট করলে শিক্ষার্থীরা এখানে পরীক্ষা দিতে পারবে।")
