@@ -79,7 +79,6 @@ if entered_password == ADMIN_PASSWORD:
                 
                 st.sidebar.subheader("📚 সাবজেক্টের কলাম রেঞ্জ সিলেক্ট করুন")
                 
-                # এক্সেলের কলাম ইনডেক্সকে A, B, C... অক্ষরে রূপান্তর করার ফাংশন
                 def get_column_letter(n):
                     string = ""
                     while n >= 0:
@@ -88,13 +87,11 @@ if entered_password == ADMIN_PASSWORD:
                     return string
 
                 total_cols = len(raw_df.columns)
-                
-                # ড্রপডাউনে সরাসরি A, B, G ইত্যাদি দেখানোর ব্যবস্থা
                 col_choices = {}
-                for idx in range(0, total_cols, 6): # প্রতি ৫-৬ কলাম পরপর সাবজেক্টের শুরু
+                for idx in range(0, total_cols, 6):
                     start_letter = get_column_letter(idx)
                     end_letter = get_column_letter(min(idx + 4, total_cols - 1))
-                    col_choices[idx] = f"কলাম {start_letter} থেকে {end_letter} (প্রশ্ন, ক, খ, গ, ঘ)"
+                    col_choices[idx] = f"কলাম {start_letter} থেকে {end_letter} (প্রশ্ন, ক, খ, ঘ)"
 
                 selected_start_idx = st.sidebar.selectbox(
                     "কোন সাবজেক্টের কলাম থেকে প্রশ্ন নিতে চান?",
@@ -107,7 +104,6 @@ if entered_password == ADMIN_PASSWORD:
                     sub_df = raw_df.iloc[:, start_idx:start_idx+5].copy()
                     sub_df.columns = ['Question', 'Option_A', 'Option_B', 'Option_C', 'Option_D']
                     
-                    # খালি সারি বাদ দেওয়া
                     sub_df = sub_df.dropna(subset=['Question']).reset_index(drop=True)
                     
                     if 'Correct_Answer' not in sub_df.columns:
@@ -140,6 +136,9 @@ if entered_password == ADMIN_PASSWORD:
                     
                     if final_filtered_df is not None and not final_filtered_df.empty:
                         st.session_state['saved_df'] = final_filtered_df
+                        # নতুন প্রশ্ন আপলোড বা ফিল্টার করলে আগের পরীক্ষার লক ক্লিয়ার করা
+                        if 'exam_active_df' in st.session_state:
+                            del st.session_state['exam_active_df']
                         st.sidebar.success("✅ সাবজেক্টের প্রশ্ন সফলভাবে সিলেক্ট ও সেভ হয়েছে!")
                 else:
                     st.sidebar.error("⚠️ সঠিক কলাম রেঞ্জ পাওয়া যায়নি।")
@@ -155,17 +154,23 @@ elif entered_password != "":
 df = st.session_state.get('saved_df', None)
 
 if df is not None and not df.empty:
-    st.info(f"🎉 **পরীক্ষার জন্য মোট {len(df)} টি প্রশ্ন প্রস্তুত আছে!**")
+    st.info(f"🎉 **পরীক্ষার জন্য প্রশ্ন প্রস্তুত আছে!**")
     
     student_name = st.text_input("পরীক্ষার্থীর নাম লিখুন:", placeholder="আপনার নাম")
     
     if student_name:
+        # পরীক্ষার্থী নাম দেওয়ার পর প্রশ্নগুলো একবারের জন্য ফিক্সড (লক) করে নেওয়া
+        if 'exam_active_df' not in st.session_state:
+            st.session_state['exam_active_df'] = df.copy()
+            
+        active_df = st.session_state['exam_active_df']
+        
         st.success(f"স্বাগতম, **{student_name}**! পরীক্ষা শুরু করুন।")
         st.divider()
         
         user_answers = {}
         
-        for i, row in df.iterrows():
+        for i, row in active_df.iterrows():
             st.markdown(f"##### **{i+1}. {str(row['Question'])}**")
             options = [str(row['Option_A']), str(row['Option_B']), str(row['Option_C']), str(row['Option_D'])]
             
@@ -179,11 +184,11 @@ if df is not None and not df.empty:
             
         if st.button("পরীক্ষা জমা দিন", type="primary"):
             score = 0
-            total = len(df)
+            total = len(active_df)
             
             st.subheader("📊 আপনার পরীক্ষার ফলাফল")
             
-            for i, row in df.iterrows():
+            for i, row in active_df.iterrows():
                 ans = user_answers[i]
                 correct = str(row['Correct_Answer'])
                 
@@ -197,5 +202,9 @@ if df is not None and not df.empty:
             st.divider()
             st.metric(label=f"{student_name}-এর মোট ফলাফল", value=f"{score} / {total}")
             st.balloons()
+            
+            # পরীক্ষা শেষ ও সাবমিট হওয়ার পর লক ক্লিয়ার করে দেওয়া যাতে পরেরবার নতুন প্রশ্ন আসে
+            if 'exam_active_df' in st.session_state:
+                del st.session_state['exam_active_df']
 else:
     st.warning("⚠️ বর্তমানে কোনো প্রশ্ন সেট করা নেই। শিক্ষক মহোদয় পাসওয়ার্ড দিয়ে ফাইল আপলোড বা সাবজেক্ট সিলেক্ট করলে এখানে পরীক্ষা দেখা যাবে।")
