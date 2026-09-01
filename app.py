@@ -77,48 +77,72 @@ if entered_password == ADMIN_PASSWORD:
                 else:
                     raw_df = pd.read_excel(uploaded_file)
                 
-                # কলামের অবস্থান (Position) অনুযায়ী ডেটা নিশ্চিত করা
-                cols = raw_df.columns
-                if len(cols) >= 5:
-                    raw_df = raw_df.rename(columns={
-                        cols[0]: 'Question',
-                        cols[1]: 'Option_A',
-                        cols[2]: 'Option_B',
-                        cols[3]: 'Option_C',
-                        cols[4]: 'Option_D'
-                    })
+                st.sidebar.subheader("📚 সাবজেক্ট / কলাম রেঞ্জ সিলেক্ট করুন")
                 
-                if 'Correct_Answer' not in raw_df.columns:
-                    raw_df['Correct_Answer'] = raw_df['Option_A']
-                if 'Explanation' not in raw_df.columns:
-                    raw_df['Explanation'] = 'কোন ব্যাখ্যা দেওয়া হয়নি।'
+                # আপনার প্রতি ৫ কলামের প্যাটার্ন অনুযায়ী অপশন তৈরি
+                # যেমন: প্রথম সাবজেক্ট (0-4 ইনডেক্স), দ্বিতীয় সাবজেক্ট (6-10 ইনডেক্স) ইত্যাদি
+                total_cols = len(raw_df.columns)
+                subject_options = {}
                 
-                st.sidebar.subheader("🎯 প্রশ্ন ফিল্টার অপশন")
-                filter_type = st.sidebar.radio("কীভাবে প্রশ্ন সিলেক্ট করতে চান?", [
-                    "সব প্রশ্ন দিয়ে পরীক্ষা",
-                    "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন",
-                    "ম্যানুয়ালি বেছে বেছে প্রশ্ন সিলেক্ট"
-                ], key="filter_radio")
+                # স্বয়ংক্রিয়ভাবে প্রতি ৫ কলাম পরপর সাবজেক্ট ব্লক খুঁজে বের করা
+                i = 0
+                sub_count = 1
+                while i < total_cols:
+                    q_col_name = str(raw_df.columns[i]).strip()
+                    if q_col_name and not q_col_name.startswith("Unnamed"):
+                        subject_options[f"সাবজেক্ট {sub_count} (কলাম {i+1} থেকে শুরু)"] = i
+                        sub_count += 1
+                    i += 6 # প্রতি সাবজেক্টের কলাম গ্যাপ হিসাব করে (যেমন A-F বা এর কাছাকাছি)
                 
-                final_filtered_df = raw_df
+                # যদি সরাসরি ড্রপডাউন দিতে চান অথবা ইনডেক্স সিলেক্ট করতে চান:
+                selected_sub_key = st.sidebar.selectbox(
+                    "কোন সাবজেক্টের প্রশ্ন নিয়ে পরীক্ষা নিতে চান?", 
+                    options=list(range(0, total_cols, 6)),
+                    format_func=lambda x: f"কলাম {x+1} থেকে পরবর্তী অংশ (যেমন: প্রশ্ন ও অপশন ক, খ, গ, ঘ)"
+                )
                 
-                if filter_type == "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন":
-                    max_q = len(raw_df)
-                    num_q = st.sidebar.number_input(f"কতটি প্রশ্ন রাখতে চান? (সর্বোচ্চ {max_q})", min_value=1, max_value=max_q, value=min(10, max_q))
-                    final_filtered_df = raw_df.sample(n=num_q).reset_index(drop=True)
+                start_idx = selected_sub_key
+                # সাবজেক্টের ডেটা কাট করে নেওয়া (প্রশ্ন + ৪টি অপশন = ৫টি কলাম)
+                if start_idx + 4 < total_cols:
+                    sub_df = raw_df.iloc[:, start_idx:start_idx+5].copy()
+                    sub_df.columns = ['Question', 'Option_A', 'Option_B', 'Option_C', 'Option_D']
                     
-                elif filter_type == "ম্যানুয়ালি বেছে বেছে প্রশ্ন সিলেক্ট":
-                    selected_indices = st.sidebar.multiselect(
-                        "তালিকা থেকে প্রশ্নগুলো নির্বাচন করুন:",
-                        options=list(raw_df.index),
-                        format_func=lambda x: f"প্রশ্ন {x+1}: {str(raw_df.loc[x, 'Question'])[:30]}..."
-                    )
-                    if selected_indices:
-                        final_filtered_df = raw_df.loc[selected_indices].reset_index(drop=True)
-                
-                if final_filtered_df is not None and not final_filtered_df.empty:
-                    st.session_state['saved_df'] = final_filtered_df
-                    st.sidebar.success("✅ প্রশ্ন সফলভাবে ফিল্টার ও সেভ করা হয়েছে!")
+                    # খালি সারিগুলো বাদ দেওয়া
+                    sub_df = sub_df.dropna(subset=['Question']).reset_index(drop=True)
+                    
+                    if 'Correct_Answer' not in sub_df.columns:
+                        sub_df['Correct_Answer'] = sub_df['Option_A']
+                    if 'Explanation' not in sub_df.columns:
+                        sub_df['Explanation'] = 'কোন ব্যাখ্যা দেওয়া হয়নি।'
+                    
+                    st.sidebar.subheader("🎯 প্রশ্ন ফিল্টার অপশন")
+                    filter_type = st.sidebar.radio("কীভাবে প্রশ্ন সিলেক্ট করতে চান?", [
+                        "সব প্রশ্ন দিয়ে পরীক্ষা",
+                        "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন",
+                        "ম্যানুয়ালি বেছে বেছে প্রশ্ন সিলেক্ট"
+                    ], key="filter_radio")
+                    
+                    final_filtered_df = sub_df
+                    
+                    if filter_type == "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন":
+                        max_q = len(sub_df)
+                        num_q = st.sidebar.number_input(f"কতটি প্রশ্ন রাখতে চান? (সর্বোচ্চ {max_q})", min_value=1, max_value=max_q, value=min(10, max_q))
+                        final_filtered_df = sub_df.sample(n=num_q).reset_index(drop=True)
+                        
+                    elif filter_type == "ম্যানুয়ালি বেছে বেছে প্রশ্ন সিলেক্ট":
+                        selected_indices = st.sidebar.multiselect(
+                            "তালিকা থেকে প্রশ্নগুলো নির্বাচন করুন:",
+                            options=list(sub_df.index),
+                            format_func=lambda x: f"প্রশ্ন {x+1}: {str(sub_df.loc[x, 'Question'])[:30]}..."
+                        )
+                        if selected_indices:
+                            final_filtered_df = sub_df.loc[selected_indices].reset_index(drop=True)
+                    
+                    if final_filtered_df is not None and not final_filtered_df.empty:
+                        st.session_state['saved_df'] = final_filtered_df
+                        st.sidebar.success("✅ সাবজেক্টের প্রশ্ন সফলভাবে সিলেক্ট ও সেভ হয়েছে!")
+                else:
+                    st.sidebar.error("⚠️ সঠিক কলাম রেঞ্জ পাওয়া যায়নি।")
             except Exception as e:
                 st.sidebar.error(f"ফাইল পড়তে সমস্যা হয়েছে: {e}")
 
@@ -168,10 +192,10 @@ if df is not None and not df.empty:
                     st.success(f"✅ **প্রশ্ন {i+1}: সঠিক উত্তর!**")
                 else:
                     st.error(f"❌ **প্রশ্ন {i+1}: ভুল উত্তর!** (আপনার উত্তর: {ans if ans else 'দেওয়া হয়নি'})")
-                    st.info(f"👉 **সঠিক উত্তর:** {correct}\n\n💡 **ব্যাখ্যা:** {row['Explanation']}")
+                    st.info(f"👉 **সঠিক উত্তর:** প্রিন্ট হবে: {correct}\n\n💡 **ব্যাখ্যা:** {row['Explanation']}")
             
             st.divider()
             st.metric(label=f"{student_name}-এর মোট ফলাফল", value=f"{score} / {total}")
             st.balloons()
 else:
-    st.warning("⚠️ বর্তমানে কোনো প্রশ্ন সেট করা নেই। শিক্ষক মহোদয় পাসওয়ার্ড দিয়ে ফাইল আপলোড বা প্রশ্ন যুক্ত করলে এখানে পরীক্ষা দেখা যাবে।")
+    st.warning("⚠️ বর্তমানে কোনো প্রশ্ন সেট করা নেই। শিক্ষক মহোদয় পাসওয়ার্ড দিয়ে ফাইল আপলোড বা সাবজেক্ট সিলেক্ট করলে এখানে পরীক্ষা দেখা যাবে।")
