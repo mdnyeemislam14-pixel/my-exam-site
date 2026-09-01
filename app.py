@@ -15,7 +15,7 @@ CONFIG_FILE = "exam_configs.csv"
 ADMIN_PASSWORD = "1234"
 
 # ==========================================
-# 🔐 সেশন স্টেট ব্যবহার করে লগইন ম্যানেজমেন্ট
+# 🔐 সেশন স্টেট ম্যানেজমেন্ট
 # ==========================================
 if 'is_admin_logged_in' not in st.session_state:
     st.session_state['is_admin_logged_in'] = False
@@ -25,8 +25,11 @@ st.sidebar.header("⚙️ প্যানেল মেনু")
 admin_menu = None
 student_menu = None
 
-if st.sidebar.is_admin_logged_in if 'is_admin_logged_in' in st.session_state else st.session_state['is_admin_logged_in']:
+# যদি অ্যাডমিন লগইন করা থাকে
+if st.session_state['is_admin_logged_in']:
     st.sidebar.success("✅ অ্যাডমিন মোড সক্রিয়!")
+    
+    # লগ আউট বাটন (সঠিকভাবে সেশন ক্লিয়ার করে রিলোড করার ব্যবস্থা)
     if st.sidebar.button("🚪 লগ আউট করুন (Log Out)"):
         st.session_state['is_admin_logged_in'] = False
         st.rerun()
@@ -37,13 +40,16 @@ if st.sidebar.is_admin_logged_in if 'is_admin_logged_in' in st.session_state els
     ])
     is_admin = True
 else:
-    entered_password = st.sidebar.text_input("অ্যাডমিন পাসওয়ার্ড দিন (শিক্ষকদের জন্য):", type="password")
+    # পাসওয়ার্ড ইনপুট বক্স (স্বয়ংক্রিয়ভাবে লগইন না হয়ে সাবমিট বাটন দিতে হবে)
+    entered_password = st.sidebar.text_input("অ্যাডমিন পাসওয়ার্ড দিন (শিক্ষকদের জন্য):", type="password", key="admin_pwd_input")
     
-    if entered_password == ADMIN_PASSWORD:
-        st.session_state['is_admin_logged_in'] = True
-        st.rerun()
-    elif entered_password != "":
-        st.sidebar.error("❌ ভুল পাসওয়ার্ড!")
+    # পাসওয়ার্ডের জায়গায় নির্দিষ্ট লগইন বাটন
+    if st.sidebar.button("🔑 লগইন করুন"):
+        if entered_password == ADMIN_PASSWORD:
+            st.session_state['is_admin_logged_in'] = True
+            st.rerun()
+        else:
+            st.sidebar.error("❌ ভুল পাসওয়ার্ড!")
     
     st.sidebar.divider()
     student_menu = st.sidebar.radio("শিক্ষার্থী মেনু:", [
@@ -413,7 +419,6 @@ else:
                         st.markdown("---")
                         st.subheader(f"🎉 অভিনন্দন, **{student_name}**! আপনার পরীক্ষা সফলভাবে জমা হয়েছে।")
                         
-                        # স্কোর ক্যালকুলেট করা
                         for i, row in active_df.iterrows():
                             ans = user_answers.get(i)
                             correct = str(row['Correct_Answer'])
