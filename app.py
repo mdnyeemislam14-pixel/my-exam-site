@@ -9,6 +9,7 @@ st.set_page_config(page_title="অনলাইন পরীক্ষা প্�
 st.title("📝 অনলাইন মডেল টেস্ট")
 
 RESULT_FILE = "results.csv"
+QUESTIONS_FILE = "saved_questions.csv"  # প্রশ্ন স্থায়ীভাবে সেভ রাখার ফাইল
 ADMIN_PASSWORD = "1234"
 
 # ==========================================
@@ -30,7 +31,6 @@ else:
         st.sidebar.error("❌ ভুল পাসওয়ার্ড!")
     
     st.sidebar.divider()
-    # শিক্ষার্থীদের জন্য আলাদা মেনু অপশন
     student_menu = st.sidebar.radio("শিক্ষার্থী মেনু:", [
         "📝 পরীক্ষা দিন",
         "🏆 ক্লাসের মেধা তালিকা (Leaderboard)"
@@ -144,10 +144,8 @@ else:
                 
                 if parsed_questions:
                     temp_df = pd.DataFrame(parsed_questions)
-                    st.session_state['saved_df'] = temp_df
-                    if 'exam_active_df' in st.session_state:
-                        del st.session_state['exam_active_df']
-                    st.sidebar.success("✅ টেক্সট থেকে প্রশ্ন সফলভাবে সেভ হয়েছে!")
+                    temp_df.to_csv(QUESTIONS_FILE, index=False)  # ফাইলে স্থায়ীভাবে সেভ হলো
+                    st.sidebar.success("✅ টেক্সট থেকে প্রশ্ন সফলভাবে ফাইলে সেভ হয়েছে!")
 
         else:
             uploaded_file = st.sidebar.file_uploader("questions.xlsx বা csv ফাইল আপলোড করুন:", type=["xlsx", "csv"])
@@ -216,17 +214,17 @@ else:
                             if filter_type == "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন":
                                 final_filtered_df = sub_df.sample(n=num_q).reset_index(drop=True)
                             
-                            st.session_state['saved_df'] = final_filtered_df
-                            if 'exam_active_df' in st.session_state:
-                                del st.session_state['exam_active_df']
-                            st.sidebar.success("✅ প্রশ্ন সফলভাবে লক ও সেভ করা হয়েছে!")
+                            final_filtered_df.to_csv(QUESTIONS_FILE, index=False)  # ফাইলে স্থায়ীভাবে সেভ হলো
+                            st.sidebar.success("✅ প্রশ্ন সফলভাবে লক ও ফাইলে সেভ করা হয়েছে!")
                     else:
                         st.sidebar.error("⚠️ সঠিক কলাম রেঞ্জ পাওয়া যায়নি।")
                 except Exception as e:
                     st.sidebar.error(f"ফাইল পড়তে সমস্যা হয়েছে: {e}")
 
-    # পরীক্ষার্থীদের মূল পরীক্ষার পেজ
-    df = st.session_state.get('saved_df', None)
+    # পরীক্ষার্থীদের মূল পরীক্ষার পেজ (ফাইল থেকে প্রশ্ন লোড করা হবে)
+    df = None
+    if os.path.exists(QUESTIONS_FILE):
+        df = pd.read_csv(QUESTIONS_FILE)
 
     if df is not None and not df.empty:
         st.info(f"🎉 **পরীক্ষার জন্য প্রশ্ন প্রস্তুত আছে!**")
@@ -234,10 +232,7 @@ else:
         student_name = st.text_input("পরীক্ষার্থীর নাম লিখুন:", placeholder="আপনার নাম")
         
         if student_name:
-            if 'exam_active_df' not in st.session_state:
-                st.session_state['exam_active_df'] = df.copy()
-                
-            active_df = st.session_state['exam_active_df']
+            active_df = df.copy()
             
             st.success(f"স্বাগতম, **{student_name}**! পরীক্ষা শুরু করুন।")
             st.divider()
@@ -297,8 +292,5 @@ else:
                     updated_res = new_result
                     
                 updated_res.to_csv(RESULT_FILE, index=False)
-                
-                if 'exam_active_df' in st.session_state:
-                    del st.session_state['exam_active_df']
     else:
-        st.warning("⚠️ বর্তমানে কোনো প্রশ্ন সেট করা নেই। শিক্ষক মহোদয় পাসওয়ার্ড দিয়ে ফাইল আপলোড ও প্রশ্ন লক করলে এখানে পরীক্ষা দেখা যাবে।")
+        st.warning("⚠️ বর্তমানে কোনো প্রশ্ন সেট করা নেই। শিক্ষক মহোদয় পাসওয়ার্ড দিয়ে ফাইল আপলোড বা টেক্সট পেস্ট করে প্রশ্ন সেট করলে এখানে পরীক্ষা দেখা যাবে।")
