@@ -366,8 +366,16 @@ else:
             if st.session_state['exam_submitted']:
                 res_info = st.session_state['last_result_data']
                 if res_info:
+                    # হোমে ফিরে যাওয়ার বাটনটি উপরে বাম পাশে দেওয়া হয়েছে
+                    if st.button("⬅️ হোমে ফিরে যান / নতুন পরীক্ষা", type="secondary"):
+                        st.session_state['exam_submitted'] = False
+                        st.session_state['confirmed_student_name'] = ""
+                        st.session_state['last_result_data'] = None
+                        st.rerun()
+
                     st.subheader(f"🎉 অভিনন্দন, **{res_info['student_name']}**! আপনার পরীক্ষা সফলভাবে জমা হয়েছে।")
-                    st.markdown(f"### 🏆 আপনার প্রাপ্ত ফলাফল: **{res_info['total']} এর মধ্যে {res_info['score']}** (বিষয়: {res_info['subject']})")
+                    # ভগ্নাংশ আকারে প্রাপ্ত ফলাফল দেখানো (যেমন: ৩ / ১০)
+                    st.markdown(f"### 🏆 আপনার প্রাপ্ত ফলাফল: **{res_info['score']} / {res_info['total']}** (বিষয়: {res_info['subject']})")
                     st.write("---")
                     
                     st.subheader("📊 বিস্তারিত উত্তরমালা ও মূল্যায়ন")
@@ -388,7 +396,7 @@ else:
                         st.markdown(f"💡 **ব্যাখ্যা:** {row['Explanation']}")
                         st.write("---")
                     
-                    if st.button("🔄 নতুন পরীক্ষা শুরু করুন / হোমে ফিরে যান", type="primary"):
+                    if st.button("🔄 নতুন পরীক্ষা শুরু করুন / হোমে ফিরে যান", type="primary", key="bottom_home_btn"):
                         st.session_state['exam_submitted'] = False
                         st.session_state['confirmed_student_name'] = ""
                         st.session_state['last_result_data'] = None
@@ -413,15 +421,19 @@ else:
                         total_marks = len(df)
                         st.info(f"📌 **বিষয়:** {selected_subject} | ⏱️ **নির্ধারিত সময়:** {duration} মিনিট | 🎯 **মোট মার্ক:** {total_marks}")
                         
-                        student_name = st.text_input("পরীক্ষার্থীর নাম লিখুন:", placeholder="আপনার পূর্ণ নাম এখানে টাইপ করুন", key="input_student_name")
-                        st.caption("ℹ️ নাম লেখার পর নিচে **'এগিয়ে যান ➔ পরীক্ষা শুরু করুন'** বাটনে ক্লিক করুন।")
-                        
-                        if student_name.strip():
-                            if st.button("এগিয়ে যান ➔ পরীক্ষা শুরু করুন"):
-                                st.session_state['confirmed_student_name'] = student_name.strip()
-                                st.session_state['exam_start_time'] = time.time()
-                                st.session_state['selected_exam_subject'] = selected_subject
-                                st.rerun()
+                        with st.container(border=True):
+                            st.markdown("#### ✍️ পরীক্ষার্থীর তথ্য ও সূচনা")
+                            student_name = st.text_input("আপনার পূর্ণ নাম লিখুন:", placeholder="এখানে নাম টাইপ করুন", key="input_student_name")
+                            st.caption("ℹ️ নাম লেখার পর নিচের বাটনে ক্লিক করুন।")
+                            
+                            if st.button("এগিয়ে যান ➔ পরীক্ষা শুরু করুন", type="primary"):
+                                if student_name.strip():
+                                    st.session_state['confirmed_student_name'] = student_name.strip()
+                                    st.session_state['exam_start_time'] = time.time()
+                                    st.session_state['selected_exam_subject'] = selected_subject
+                                    st.rerun()
+                                else:
+                                    st.error("⚠️ অনুগ্রহ করে আপনার নাম লিখুন।")
                 else:
                     selected_subject = st.session_state.get('selected_exam_subject', available_subjects[0])
                     df = all_q_df[all_q_df['Subject'] == selected_subject].reset_index(drop=True)
@@ -437,10 +449,7 @@ else:
                     current_student = st.session_state['confirmed_student_name']
                     active_df = df.copy()
                     
-                    st.success(f"স্বাগতম, **{current_student}**! **{selected_subject}** বিষয়ের পরীক্ষা শুরু করুন।")
-                    st.divider()
-                    
-                    timer_placeholder = st.empty()
+                    # টাইমারটি সবসময় বাঁ পাশের সাইডবারে উপরে ফিক্সড রাখা হলো যাতে স্ক্রল করলেও দেখা যায়
                     total_seconds = duration * 60
                     
                     if 'exam_start_time' not in st.session_state or st.session_state.get('current_sub') != selected_subject:
@@ -452,7 +461,14 @@ else:
                     
                     mins = remaining_seconds // 60
                     secs = remaining_seconds % 60
-                    timer_placeholder.markdown(f"⏳ **বাকি সময়:** `{mins:02d} মিনিট {secs:02d} সেকেন্ড`")
+                    
+                    st.sidebar.markdown("---")
+                    st.sidebar.subheader("⏱️ পরীক্ষার লাইভ টাইমার")
+                    st.sidebar.markdown(f"⏳ **বাকি সময়:**\n### `{mins:02d} মিনিট {secs:02d} সেকেন্ড`")
+                    st.sidebar.caption(f"পরীক্ষার্থী: {current_student}")
+                    
+                    st.success(f"স্বাগতম, **{current_student}**! **{selected_subject}** বিষয়ের পরীক্ষা শুরু করুন।")
+                    st.divider()
                     
                     user_answers = {}
                     
@@ -495,7 +511,6 @@ else:
                             
                         updated_res.to_csv(RESULT_FILE, index=False)
                         
-                        # রেজাল্ট ডেটা সেশনে সেভ করে সাবমিটেড স্ট্যাটাস ট্রু করা
                         st.session_state['exam_submitted'] = True
                         st.session_state['last_result_data'] = {
                             "student_name": current_student,
