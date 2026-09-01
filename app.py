@@ -25,7 +25,7 @@ st.sidebar.header("⚙️ প্যানেল মেনু")
 admin_menu = None
 student_menu = None
 
-if st.session_state['is_admin_logged_in']:
+if st.sidebar.is_admin_logged_in if 'is_admin_logged_in' in st.session_state else st.session_state['is_admin_logged_in']:
     st.sidebar.success("✅ অ্যাডমিন মোড সক্রিয়!")
     if st.sidebar.button("🚪 লগ আউট করুন (Log Out)"):
         st.session_state['is_admin_logged_in'] = False
@@ -123,7 +123,19 @@ elif not is_admin and student_menu == "🏆 ক্লাসের মেধা �
 else:
     if is_admin:
         st.sidebar.markdown("### 📚 নতুন বিষয় ও প্রশ্ন সংযোজন")
-        subject_name = st.sidebar.text_input("বিষয়ের নাম লিখুন:", placeholder="যেমন: বাংলা ১ম পত্র / গণিত")
+        
+        # বিষয়ের নাম ড্রপডাউন মেনু
+        subject_options = [
+            "বাংলা", 
+            "English", 
+            "গণিত", 
+            "বিজ্ঞান", 
+            "বাংলাদেশের বিষয়াবলি", 
+            "আন্তর্জাতিক বিষয়াবলি", 
+            "ICT"
+        ]
+        subject_name = st.sidebar.selectbox("বিষয়ের নাম সিলেক্ট করুন:", subject_options)
+        
         exam_duration = st.sidebar.number_input("⏱️ পরীক্ষার সময় (মিনিটে):", min_value=1, max_value=300, value=10)
         
         st.sidebar.markdown("---")
@@ -137,9 +149,7 @@ else:
             pasted_text = st.sidebar.text_area("এখানে আপনার প্রশ্ন পেস্ট করুন:", height=250, placeholder="১. প্রশ্ন...\nক) অপশন...\nখ) অপশন...\nগ) অপশন...\nঘ) অপশন...\nউত্তর: ক\nব্যাখ্যা: ...")
             
             if st.sidebar.button("📌 টেক্সট থেকে প্রশ্ন সেভ করুন"):
-                if not subject_name:
-                    st.sidebar.error("⚠️ অনুগ্রহ করে বিষয়ের নাম লিখুন।")
-                elif not pasted_text:
+                if not pasted_text:
                     st.sidebar.error("⚠️ অনুগ্রহ করে প্রশ্ন পেস্ট করুন।")
                 else:
                     parsed_questions = []
@@ -210,30 +220,27 @@ else:
                     else:
                         raw_df = pd.read_excel(uploaded_file)
                     
-                    st.sidebar.subheader("📚 সাবজেক্টের কলাম রেঞ্জ সিলেক্ট করুন")
+                    st.sidebar.subheader("📚 কলাম সেটআপ (আপনার ফাইল অনুযায়ী)")
                     
-                    def get_column_letter(n):
-                        string = ""
-                        while n >= 0:
-                            string = chr(n % 26 + 65) + string
-                            n = n // 26 - 1
-                        return string
+                    # নির্দিষ্ট কলাম রেঞ্জ ম্যাপিং (আপনার দেওয়া রিকোয়ারমেন্ট অনুযায়ী)
+                    predefined_columns = {
+                        "বাংলা (A - F)": 0,
+                        "English (G - L)": 6,
+                        "গণিত (M - R)": 12,
+                        "বিজ্ঞান (S - X)": 18,
+                        "বাংলাদেশের বিষয়াবলি (Y - AD)": 24,
+                        "আন্তর্জাতিক বিষয়াবলি (AE - AJ)": 30,
+                        "ICT (AK - AP)": 36
+                    }
 
-                    total_cols = len(raw_df.columns)
-                    col_choices = {}
-                    
-                    for idx in range(0, total_cols, 6):
-                        start_letter = get_column_letter(idx)
-                        end_letter = get_column_letter(min(idx + 5, total_cols - 1))
-                        col_choices[idx] = f"কলাম {start_letter} থেকে {end_letter} ({subject_name if subject_name else 'সাধারণ'})"
-
-                    selected_start_idx = st.sidebar.selectbox(
-                        "কোন কলাম থেকে প্রশ্ন নিতে চান?",
-                        options=list(col_choices.keys()),
-                        format_func=lambda x: col_choices[x]
+                    selected_col_range = st.sidebar.selectbox(
+                        "কোন বিষয়ের কলাম রেঞ্জ থেকে প্রশ্ন নিতে চান?",
+                        options=list(predefined_columns.keys())
                     )
                     
-                    start_idx = selected_start_idx
+                    start_idx = predefined_columns[selected_col_range]
+                    total_cols = len(raw_df.columns)
+                    
                     if start_idx + 5 < total_cols:
                         sub_df = raw_df.iloc[:, start_idx:start_idx+6].copy()
                         sub_df.columns = ['Question', 'Option_A', 'Option_B', 'Option_C', 'Option_D', 'Correct_Answer']
@@ -265,35 +272,32 @@ else:
                                 final_filtered_df = sub_df.loc[selected_indices].reset_index(drop=True)
 
                         if st.sidebar.button("📌 ফাইল থেকে প্রশ্ন সেট করুন"):
-                            if not subject_name:
-                                st.sidebar.error("⚠️ অনুগ্রহ করে উপরে বিষয়ের নাম লিখুন।")
+                            if filter_type == "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন":
+                                final_filtered_df = sub_df.sample(n=num_q).reset_index(drop=True)
+                            
+                            final_filtered_df['Subject'] = subject_name
+                            
+                            if os.path.exists(QUESTIONS_FILE):
+                                existing_q_df = pd.read_csv(QUESTIONS_FILE)
+                                existing_q_df = existing_q_df[existing_q_df['Subject'] != subject_name]
+                                final_q_df = pd.concat([existing_q_df, final_filtered_df], ignore_index=True)
                             else:
-                                if filter_type == "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন":
-                                    final_filtered_df = sub_df.sample(n=num_q).reset_index(drop=True)
-                                
-                                final_filtered_df['Subject'] = subject_name
-                                
-                                if os.path.exists(QUESTIONS_FILE):
-                                    existing_q_df = pd.read_csv(QUESTIONS_FILE)
-                                    existing_q_df = existing_q_df[existing_q_df['Subject'] != subject_name]
-                                    final_q_df = pd.concat([existing_q_df, final_filtered_df], ignore_index=True)
-                                else:
-                                    final_q_df = final_filtered_df
-                                
-                                final_q_df.to_csv(QUESTIONS_FILE, index=False)
-                                
-                                config_df = pd.DataFrame([{"Subject": subject_name, "Duration": exam_duration}])
-                                if os.path.exists(CONFIG_FILE):
-                                    existing_conf = pd.read_csv(CONFIG_FILE)
-                                    existing_conf = existing_conf[existing_conf['Subject'] != subject_name]
-                                    final_conf = pd.concat([existing_conf, config_df], ignore_index=True)
-                                else:
-                                    final_conf = config_df
-                                final_conf.to_csv(CONFIG_FILE, index=False)
-                                
-                                st.sidebar.success(f"✅ '{subject_name}' বিষয়ের ফাইল থেকে প্রশ্ন ও সময় সফলভাবে স্থায়ীভাবে সেভ হয়েছে!")
+                                final_q_df = final_filtered_df
+                            
+                            final_q_df.to_csv(QUESTIONS_FILE, index=False)
+                            
+                            config_df = pd.DataFrame([{"Subject": subject_name, "Duration": exam_duration}])
+                            if os.path.exists(CONFIG_FILE):
+                                existing_conf = pd.read_csv(CONFIG_FILE)
+                                existing_conf = existing_conf[existing_conf['Subject'] != subject_name]
+                                final_conf = pd.concat([existing_conf, config_df], ignore_index=True)
+                            else:
+                                final_conf = config_df
+                            final_conf.to_csv(CONFIG_FILE, index=False)
+                            
+                            st.sidebar.success(f"✅ '{subject_name}' বিষয়ের ফাইল থেকে প্রশ্ন ও সময় সফলভাবে স্থায়ীভাবে সেভ হয়েছে!")
                     else:
-                        st.sidebar.error("⚠️ সঠিক কলাম রেঞ্জ পাওয়া যায়নি।")
+                        st.sidebar.error("⚠️ আপনার এক্সেল ফাইলে এই কলাম রেঞ্জ পর্যন্ত ডেটা নেই বা কলাম সংখ্যা কম আছে।")
                 except Exception as e:
                     st.sidebar.error(f"ফাইল পড়তে সমস্যা হয়েছে: {e}")
 
@@ -309,7 +313,7 @@ else:
                 for sub in saved_subs:
                     count = len(q_check_df[q_check_df['Subject'] == sub])
                     
-                    with st.expander(f"📁 বিষয়: {sub} ({sub}) (প্রশ্ন সংখ্যা: {count}টি)"):
+                    with st.expander(f"📁 বিষয়: {sub} (প্রশ্ন সংখ্যা: {count}টি)"):
                         sub_questions = q_check_df[q_check_df['Subject'] == sub].reset_index(drop=True)
                         
                         for idx, q_row in sub_questions.iterrows():
@@ -363,7 +367,7 @@ else:
             if df is not None and not df.empty:
                 total_marks = len(df)
                 
-                st.info(f"📌 **বিষয় ({selected_subject}):** {selected_subject} | ⏱️ **নির্ধারিত সময়:** {duration} মিনিট | 🎯 **মোট মার্ক:** {total_marks}")
+                st.info(f"📌 **বিষয়:** {selected_subject} | ⏱️ **নির্ধারিত সময়:** {duration} মিনিট | 🎯 **মোট মার্ক:** {total_marks}")
                 
                 student_name = st.text_input("পরীক্ষার্থীর নাম লিখুন:", placeholder="আপনার পূর্ণ নাম")
                 
@@ -386,7 +390,7 @@ else:
                     
                     mins = remaining_seconds // 60
                     secs = remaining_seconds % 60
-                    timer_placeholder.markdown(f"⏳ **বাকি সময় (সেকেন্ডসহ):** `{mins:02d} মিনিট {secs:02d} সেকেন্ড`")
+                    timer_placeholder.markdown(f"⏳ **বাকি সময়:** `{mins:02d} মিনিট {secs:02d} সেকেন্ড`")
                     
                     user_answers = {}
                     
@@ -408,6 +412,14 @@ else:
                         
                         st.markdown("---")
                         st.subheader(f"🎉 অভিনন্দন, **{student_name}**! আপনার পরীক্ষা সফলভাবে জমা হয়েছে।")
+                        
+                        # স্কোর ক্যালকুলেট করা
+                        for i, row in active_df.iterrows():
+                            ans = user_answers.get(i)
+                            correct = str(row['Correct_Answer'])
+                            if ans and ans.strip() == correct.strip():
+                                score += 1
+
                         st.success(f"🏆 **আপনার প্রাপ্ত ফলাফল:** `{score}` / `{total}` (বিষয়: {selected_subject})")
                         st.write("---")
                         
@@ -415,13 +427,12 @@ else:
                         st.write("---")
                         
                         for i, row in active_df.iterrows():
-                            ans = user_answers[i]
+                            ans = user_answers.get(i)
                             correct = str(row['Correct_Answer'])
                             
                             st.markdown(f"##### **প্রশ্ন {i+1}: {str(row['Question'])}**")
                             
                             if ans and ans.strip() == correct.strip():
-                                score += 1
                                 st.success(f"✅ সঠিক উত্তর! (আপনার উত্তর: {ans})")
                             else:
                                 st.error(f"❌ ভুল উত্তর! (আপনার উত্তর ছিল: {ans if ans else 'দেওয়া হয়নি'})")
