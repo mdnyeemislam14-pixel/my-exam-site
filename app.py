@@ -21,8 +21,13 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-st.title("📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম")
-st.markdown("### ✨ Powered by **Job Efforts**")
+# 🌟 Job Efforts ব্যানারটি একটু বড় এবং আকর্ষণীয় করা হলো যাতে মোবাইলে স্পষ্টভাবে চোখে পড়ে
+st.markdown("""
+    <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #654ea3, #eaafc8); border-radius: 10px; margin-bottom: 20px; color: white;">
+        <h1 style="margin: 0; font-size: 28px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h1>
+        <h3 style="margin: 5px 0 0 0; font-size: 22px; letter-spacing: 1px;">✨ Powered by <span style="background-color: #ffcc00; color: #000; padding: 2px 10px; border-radius: 5px;">Job Efforts</span></h3>
+    </div>
+""", unsafe_allow_html=True)
 
 RESULT_FILE = "results.csv"
 QUESTIONS_FILE = "saved_questions.csv"
@@ -47,10 +52,24 @@ if 'last_result_data' not in st.session_state:
 if 'selected_exam_subject' not in st.session_state:
     st.session_state['selected_exam_subject'] = ""
 
-st.sidebar.header("⚙️ মেনু")
+# মোবাইলের জন্য সাইডবার বা ড্রপডাউন অপশন নিশ্চিত করতে মূল পাতায় নেভিগেশন ট্যাব রাখা শ্রেয়
+if not st.session_state['is_admin_logged_in']:
+    st.markdown("### 📌 মেনু নির্বাচন করুন:")
+    mobile_nav = st.radio(
+        "মোবাইল ও পিসির সহজ নেভিগেশন:",
+        ["📝 পরীক্ষা দিন", "🏆 ক্লাসের মেধা তালিকা (Leaderboard)"],
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+    student_menu = mobile_nav
+    is_admin = False
+else:
+    student_menu = None
+    is_admin = True
+
+st.sidebar.header("⚙️ মেনু ও কন্ট্রোল প্যানেল")
 
 admin_menu = None
-student_menu = None
 
 # যদি অ্যাডমিন লগইন করা থাকে
 if st.session_state['is_admin_logged_in']:
@@ -69,14 +88,7 @@ if st.session_state['is_admin_logged_in']:
     ])
     is_admin = True
 else:
-    # শিক্ষার্থীরা সবসময় এই মেনুগুলো দেখতে পাবে
-    student_menu = st.sidebar.radio("শিক্ষার্থী মেনু:", [
-        "📝 পরীক্ষা দিন",
-        "🏆 ক্লাসের মেধা তালিকা (Leaderboard)"
-    ])
-    is_admin = False
-    
-    # শিক্ষক/অ্যাডমিন লগইন অপশন
+    # শিক্ষক/অ্যাডমিন লগইন অপশন সাইডবারে থাকবে
     with st.sidebar.expander("🔐 শিক্ষক/অ্যাডমিন লগইন"):
         entered_password = st.text_input("পাসওয়ার্ড দিন:", type="password", key="admin_pwd_input")
         if st.button("🔑 লগইন করুন"):
@@ -128,7 +140,7 @@ if is_admin and admin_menu == "📊 সকল শিক্ষার্থীর 
         st.warning("এখনো কোনো ফলাফল জমা হয়নি।")
 
 # ==========================================
-# 🏆 ২. শিক্ষার্থী: ক্লাসের মেধা তালিকা দেখার পেজ (মেনু থেকে যেকোনো সময় দেখা যাবে)
+# 🏆 ২. শিক্ষার্থী: ক্লাসের মেধা তালিকা দেখার পেজ
 # ==========================================
 elif not is_admin and student_menu == "🏆 ক্লাসের মেধা তালিকা (Leaderboard)":
     st.subheader("🏆 ক্লাসের লাইভ মেধা তালিকা")
@@ -481,13 +493,11 @@ else:
                     mins = remaining_seconds // 60
                     secs = remaining_seconds % 60
                     
-                    # টাইমারটি সাইডবার এবং মূল পাতায় উভয় জায়গায় রাখা হলো
                     st.sidebar.markdown("---")
                     st.sidebar.subheader("⏱️ পরীক্ষার লাইভ টাইমার")
                     st.sidebar.markdown(f"⏳ **বাকি সময়:**\n### `{mins:02d} মিনিট {secs:02d} সেকেন্ড`")
                     st.sidebar.caption(f"পরীক্ষার্থী: {current_student} ({selected_subject})")
                     
-                    # মূল পেজের উপরেও টাইমার বক্স যুক্ত করা হলো যাতে সরাসরি দেখা যায়
                     timer_container = st.empty()
                     timer_container.markdown(f"### ⏳ পরীক্ষার বাকি সময়: `{mins:02d} মিনিট {secs:02d} সেকেন্ড`")
                     
