@@ -77,37 +77,37 @@ if entered_password == ADMIN_PASSWORD:
                 else:
                     raw_df = pd.read_excel(uploaded_file)
                 
-                st.sidebar.subheader("📚 সাবজেক্ট / কলাম রেঞ্জ সিলেক্ট করুন")
+                st.sidebar.subheader("📚 সাবজেক্টের কলাম রেঞ্জ সিলেক্ট করুন")
                 
-                # আপনার প্রতি ৫ কলামের প্যাটার্ন অনুযায়ী অপশন তৈরি
-                # যেমন: প্রথম সাবজেক্ট (0-4 ইনডেক্স), দ্বিতীয় সাবজেক্ট (6-10 ইনডেক্স) ইত্যাদি
+                # এক্সেলের কলাম ইনডেক্সকে A, B, C... অক্ষরে রূপান্তর করার ফাংশন
+                def get_column_letter(n):
+                    string = ""
+                    while n >= 0:
+                        string = chr(n % 26 + 65) + string
+                        n = n // 26 - 1
+                    return string
+
                 total_cols = len(raw_df.columns)
-                subject_options = {}
                 
-                # স্বয়ংক্রিয়ভাবে প্রতি ৫ কলাম পরপর সাবজেক্ট ব্লক খুঁজে বের করা
-                i = 0
-                sub_count = 1
-                while i < total_cols:
-                    q_col_name = str(raw_df.columns[i]).strip()
-                    if q_col_name and not q_col_name.startswith("Unnamed"):
-                        subject_options[f"সাবজেক্ট {sub_count} (কলাম {i+1} থেকে শুরু)"] = i
-                        sub_count += 1
-                    i += 6 # প্রতি সাবজেক্টের কলাম গ্যাপ হিসাব করে (যেমন A-F বা এর কাছাকাছি)
-                
-                # যদি সরাসরি ড্রপডাউন দিতে চান অথবা ইনডেক্স সিলেক্ট করতে চান:
-                selected_sub_key = st.sidebar.selectbox(
-                    "কোন সাবজেক্টের প্রশ্ন নিয়ে পরীক্ষা নিতে চান?", 
-                    options=list(range(0, total_cols, 6)),
-                    format_func=lambda x: f"কলাম {x+1} থেকে পরবর্তী অংশ (যেমন: প্রশ্ন ও অপশন ক, খ, গ, ঘ)"
+                # ড্রপডাউনে সরাসরি A, B, G ইত্যাদি দেখানোর ব্যবস্থা
+                col_choices = {}
+                for idx in range(0, total_cols, 6): # প্রতি ৫-৬ কলাম পরপর সাবজেক্টের শুরু
+                    start_letter = get_column_letter(idx)
+                    end_letter = get_column_letter(min(idx + 4, total_cols - 1))
+                    col_choices[idx] = f"কলাম {start_letter} থেকে {end_letter} (প্রশ্ন, ক, খ, গ, ঘ)"
+
+                selected_start_idx = st.sidebar.selectbox(
+                    "কোন সাবজেক্টের কলাম থেকে প্রশ্ন নিতে চান?",
+                    options=list(col_choices.keys()),
+                    format_func=lambda x: col_choices[x]
                 )
                 
-                start_idx = selected_sub_key
-                # সাবজেক্টের ডেটা কাট করে নেওয়া (প্রশ্ন + ৪টি অপশন = ৫টি কলাম)
+                start_idx = selected_start_idx
                 if start_idx + 4 < total_cols:
                     sub_df = raw_df.iloc[:, start_idx:start_idx+5].copy()
                     sub_df.columns = ['Question', 'Option_A', 'Option_B', 'Option_C', 'Option_D']
                     
-                    # খালি সারিগুলো বাদ দেওয়া
+                    # খালি সারি বাদ দেওয়া
                     sub_df = sub_df.dropna(subset=['Question']).reset_index(drop=True)
                     
                     if 'Correct_Answer' not in sub_df.columns:
@@ -192,7 +192,7 @@ if df is not None and not df.empty:
                     st.success(f"✅ **প্রশ্ন {i+1}: সঠিক উত্তর!**")
                 else:
                     st.error(f"❌ **প্রশ্ন {i+1}: ভুল উত্তর!** (আপনার উত্তর: {ans if ans else 'দেওয়া হয়নি'})")
-                    st.info(f"👉 **সঠিক উত্তর:** প্রিন্ট হবে: {correct}\n\n💡 **ব্যাখ্যা:** {row['Explanation']}")
+                    st.info(f"👉 **সঠিক উত্তর:** {correct}\n\n💡 **ব্যাখ্যা:** {row['Explanation']}")
             
             st.divider()
             st.metric(label=f"{student_name}-এর মোট ফলাফল", value=f"{score} / {total}")
