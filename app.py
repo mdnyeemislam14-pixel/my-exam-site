@@ -225,7 +225,6 @@ else:
                     for idx in range(0, total_cols, 6):
                         start_letter = get_column_letter(idx)
                         end_letter = get_column_letter(min(idx + 5, total_cols - 1))
-                        # কলাম রেঞ্জের পাশে ব্র্যাকেটে সাবজেক্ট বা নাম উল্লেখ করা
                         col_choices[idx] = f"কলাম {start_letter} থেকে {end_letter} ({subject_name if subject_name else 'সাধারণ'})"
 
                     selected_start_idx = st.sidebar.selectbox(
@@ -310,7 +309,6 @@ else:
                 for sub in saved_subs:
                     count = len(q_check_df[q_check_df['Subject'] == sub])
                     
-                    # বিষয়ের নামের পাশে ব্র্যাকেটে সাবজেক্ট বা বিষয় উল্লেখ করা
                     with st.expander(f"📁 বিষয়: {sub} ({sub}) (প্রশ্ন সংখ্যা: {count}টি)"):
                         sub_questions = q_check_df[q_check_df['Subject'] == sub].reset_index(drop=True)
                         
@@ -377,10 +375,8 @@ else:
                     
                     timer_placeholder = st.empty()
                     
-                    # সময় সেকেন্ড হিসেবে কাউন্টডাউন করার জন্য রিয়েল-টাইম লুপ
                     total_seconds = duration * 60
                     
-                    # সেশন স্টেটে পরীক্ষার শুরু সময় বা কাউন্টডাউন ট্র্যাক করা
                     if 'exam_start_time' not in st.session_state or st.session_state.get('current_sub') != selected_subject:
                         st.session_state['exam_start_time'] = time.time()
                         st.session_state['current_sub'] = selected_subject
@@ -389,8 +385,8 @@ else:
                     remaining_seconds = max(0, total_seconds - elapsed_seconds)
                     
                     mins = remaining_seconds // 60
-secs = remaining_seconds % 60
-timer_placeholder.markdown(f"⏳ **বাকি সময় (সেকেন্ডসহ):** `{mins:02d} মিনিট {secs:02d} সেকেন্ড`")
+                    secs = remaining_seconds % 60
+                    timer_placeholder.markdown(f"⏳ **বাকি সময় (সেকেন্ডসহ):** `{mins:02d} মিনিট {secs:02d} সেকেন্ড`")
                     
                     user_answers = {}
                     
@@ -410,7 +406,6 @@ timer_placeholder.markdown(f"⏳ **বাকি সময় (সেকেন্ড
                         score = 0
                         total = total_marks
                         
-                        # ঠিক জমা দেওয়ার সাথে সাথেই ফলাফল সবার ওপরে দেখানোর ব্যবস্থা (শেষের ডাবল স্কোর কার্ড বাদ দেওয়া হয়েছে)
                         st.markdown("---")
                         st.subheader(f"🎉 অভিনন্দন, **{student_name}**! আপনার পরীক্ষা সফলভাবে জমা হয়েছে।")
                         st.success(f"🏆 **আপনার প্রাপ্ত ফলাফল:** `{score}` / `{total}` (বিষয়: {selected_subject})")
