@@ -7,7 +7,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="centered")
 
-# Streamlit এর ডিফল্ট হেডার, ফুটার এবং ব্র্যান্ডিং হাইড করার সিএসএস
+# Streamlit এর ডিফল্ট হেডার, ফুটার এবং ব্র্যান্ডিং হাইড করার সিএসএস এবং ফিক্সড টাইমার ডিজাইন
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -17,17 +17,26 @@ hide_streamlit_style = """
     div[data-testid="stStatusWidget"] {visibility: hidden;}
     .viewerBadge_container__1QSob {visibility: hidden;}
     #GithubIcon {visibility: hidden;}
+    
+    /* মোবাইলে সবসময় উপরে টাইমার ভাসমান বা ফিক্সড রাখার জন্য */
+    .fixed-timer {
+        position: sticky;
+        top: 0;
+        z-index: 99999;
+        background: linear-gradient(135deg, #ff4b4b, #ff9068);
+        color: white;
+        padding: 10px 15px;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: bold;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 15px;
+    }
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# 🌟 Job Efforts ব্যানারটি একটু বড় এবং আকর্ষণীয় করা হলো যাতে মোবাইলে স্পষ্টভাবে চোখে পড়ে
-st.markdown("""
-    <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #654ea3, #eaafc8); border-radius: 10px; margin-bottom: 20px; color: white;">
-        <h1 style="margin: 0; font-size: 28px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h1>
-        <h3 style="margin: 5px 0 0 0; font-size: 22px; letter-spacing: 1px;">✨ Powered by <span style="background-color: #ffcc00; color: #000; padding: 2px 10px; border-radius: 5px;">Job Efforts</span></h3>
-    </div>
-""", unsafe_allow_html=True)
+st.title("📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম")
 
 RESULT_FILE = "results.csv"
 QUESTIONS_FILE = "saved_questions.csv"
@@ -52,11 +61,11 @@ if 'last_result_data' not in st.session_state:
 if 'selected_exam_subject' not in st.session_state:
     st.session_state['selected_exam_subject'] = ""
 
-# মোবাইলের জন্য সাইডবার বা ড্রপডাউন অপশন নিশ্চিত করতে মূল পাতায় নেভিগেশন ট্যাব রাখা শ্রেয়
+# মোবাইলে সহজে দেখার জন্য মূল পাতায় ট্যাব বা নেভিগেশন রাখা হলো
 if not st.session_state['is_admin_logged_in']:
     st.markdown("### 📌 মেনু নির্বাচন করুন:")
     mobile_nav = st.radio(
-        "মোবাইল ও পিসির সহজ নেভিগেশন:",
+        "নেভিগেশন ট্যাব:",
         ["📝 পরীক্ষা দিন", "🏆 ক্লাসের মেধা তালিকা (Leaderboard)"],
         horizontal=True,
         label_visibility="collapsed"
@@ -493,13 +502,18 @@ else:
                     mins = remaining_seconds // 60
                     secs = remaining_seconds % 60
                     
+                    # মোবাইলে স্ক্রিন যতই নিচে নামানো হোক না কেন, টাইমারটি সবসময় উপরে ভেসে থাকবে (Fixed Timer)
+                    st.markdown(f"""
+                        <div class="fixed-timer">
+                            ⏳ পরীক্ষার বাকি সময়: {mins:02d} মিনিট {secs:02d} সেকেন্ড
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # সাইডবারেও টাইমার দেখানো হচ্ছে
                     st.sidebar.markdown("---")
                     st.sidebar.subheader("⏱️ পরীক্ষার লাইভ টাইমার")
                     st.sidebar.markdown(f"⏳ **বাকি সময়:**\n### `{mins:02d} মিনিট {secs:02d} সেকেন্ড`")
                     st.sidebar.caption(f"পরীক্ষার্থী: {current_student} ({selected_subject})")
-                    
-                    timer_container = st.empty()
-                    timer_container.markdown(f"### ⏳ পরীক্ষার বাকি সময়: `{mins:02d} মিনিট {secs:02d} সেকেন্ড`")
                     
                     st.success(f"স্বাগতম, **{current_student}**! **{selected_subject}** বিষয়ের পরীক্ষা শুরু করুন।")
                     st.divider()
