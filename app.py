@@ -23,6 +23,12 @@ if 'is_admin_logged_in' not in st.session_state:
 if 'confirmed_student_name' not in st.session_state:
     st.session_state['confirmed_student_name'] = ""
 
+if 'exam_submitted' not in st.session_state:
+    st.session_state['exam_submitted'] = False
+
+if 'last_result_data' not in st.session_state:
+    st.session_state['last_result_data'] = None
+
 st.sidebar.header("⚙️ প্যানেল মেনু")
 
 admin_menu = None
@@ -32,10 +38,10 @@ student_menu = None
 if st.session_state['is_admin_logged_in']:
     st.sidebar.success("✅ অ্যাডমিন মোড সক্রিয়!")
     
-    # লগ আউট বাটন
     if st.sidebar.button("🚪 লগ আউট করুন (Log Out)"):
         st.session_state['is_admin_logged_in'] = False
         st.session_state['confirmed_student_name'] = ""
+        st.session_state['exam_submitted'] = False
         st.rerun()
         
     admin_menu = st.sidebar.radio("অ্যাডমিন কন্ট্রোল প্যানেল:", [
@@ -44,7 +50,6 @@ if st.session_state['is_admin_logged_in']:
     ])
     is_admin = True
 else:
-    # পাসওয়ার্ড ইনপুট বক্স ও লগইন বাটন
     entered_password = st.sidebar.text_input("অ্যাডমিন পাসওয়ার্ড দিন (শিক্ষকদের জন্য):", type="password", key="admin_pwd_input")
     
     if st.sidebar.button("🔑 লগইন করুন"):
@@ -357,33 +362,78 @@ else:
         if not all_q_df.empty and 'Subject' in all_q_df.columns:
             available_subjects = all_q_df['Subject'].unique().tolist()
             
-            st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন")
-            selected_subject = st.selectbox("কোন বিষয়ের পরীক্ষা দিতে চান তা সিলেক্ট করুন:", available_subjects)
-            st.write("---")
-            
-            df = all_q_df[all_q_df['Subject'] == selected_subject].reset_index(drop=True)
-            
-            duration = 10
-            if os.path.exists(CONFIG_FILE):
-                conf_df = pd.read_csv(CONFIG_FILE)
-                match_conf = conf_df[conf_df['Subject'] == selected_subject]
-                if not match_conf.empty:
-                    duration = int(match_conf.iloc[0]['Duration'])
-
-            if df is not None and not df.empty:
-                total_marks = len(df)
-                
-                st.info(f"📌 **বিষয়:** {selected_subject} | ⏱️ **নির্ধারিত সময়:** {duration} মিনিট | 🎯 **মোট মার্ক:** {total_marks}")
-                
-                student_name = st.text_input("পরীক্ষার্থীর নাম লিখুন:", placeholder="আপনার পূর্ণ নাম", key="input_student_name")
-                
-                if student_name.strip():
-                    if st.button("এগিয়ে যান ➔ পরীক্ষা শুরু করুন"):
-                        st.session_state['confirmed_student_name'] = student_name.strip()
-                        st.session_state['exam_start_time'] = time.time()  # পরীক্ষার শুরুর সঠিক সময় সেট করা
+            # যদি পরীক্ষা ইতিমধ্যেই জমা হয়ে গিয়ে থাকে, তবে ফলাফল স্ক্রিন স্থিরভাবে দেখাবে
+            if st.session_state['exam_submitted']:
+                res_info = st.session_state['last_result_data']
+                if res_info:
+                    st.subheader(f"🎉 অভিনন্দন, **{res_info['student_name']}**! আপনার পরীক্ষা সফলভাবে জমা হয়েছে।")
+                    st.markdown(f"### 🏆 আপনার প্রাপ্ত ফলাফল: **{res_info['total']} এর মধ্যে {res_info['score']}** (বিষয়: {res_info['subject']})")
+                    st.write("---")
+                    
+                    st.subheader("📊 বিস্তারিত উত্তরমালা ও মূল্যায়ন")
+                    st.write("---")
+                    
+                    for i, row in res_info['active_df'].iterrows():
+                        ans = res_info['user_answers'].get(i)
+                        correct = str(row['Correct_Answer'])
+                        
+                        st.markdown(f"##### **প্রশ্ন {i+1}: {str(row['Question'])}**")
+                        
+                        if ans and ans.strip() == correct.strip():
+                            st.success(f"✅ সঠিক উত্তর! (আপনার উত্তর: {ans})")
+                        else:
+                            st.error(f"❌ ভুল উত্তর! (আপনার উত্তর ছিল: {ans if ans else 'দেওয়া হয়নি'})")
+                            st.info(f"👉 **সঠিক উত্তর:** {correct}")
+                        
+                        st.markdown(f"💡 **ব্যাখ্যা:** {row['Explanation']}")
+                        st.write("---")
+                    
+                    if st.button("🔄 নতুন পরীক্ষা শুরু করুন / হোমে ফিরে যান", type="primary"):
+                        st.session_state['exam_submitted'] = False
+                        st.session_state['confirmed_student_name'] = ""
+                        st.session_state['last_result_data'] = None
                         st.rerun()
+            else:
+                # স্বাভাবিক পরীক্ষার ফ্লো
+                if not st.session_state['confirmed_student_name']:
+                    st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন")
+                    selected_subject = st.selectbox("কোন বিষয়ের পরীক্ষা দিতে চান তা সিলেক্ট করুন:", available_subjects)
+                    st.write("---")
+                    
+                    df = all_q_df[all_q_df['Subject'] == selected_subject].reset_index(drop=True)
+                    
+                    duration = 10
+                    if os.path.exists(CONFIG_FILE):
+                        conf_df = pd.read_csv(CONFIG_FILE)
+                        match_conf = conf_df[conf_df['Subject'] == selected_subject]
+                        if not match_conf.empty:
+                            duration = int(match_conf.iloc[0]['Duration'])
 
-                if st.session_state['confirmed_student_name']:
+                    if df is not None and not df.empty:
+                        total_marks = len(df)
+                        st.info(f"📌 **বিষয়:** {selected_subject} | ⏱️ **নির্ধারিত সময়:** {duration} মিনিট | 🎯 **মোট মার্ক:** {total_marks}")
+                        
+                        student_name = st.text_input("পরীক্ষার্থীর নাম লিখুন:", placeholder="আপনার পূর্ণ নাম এখানে টাইপ করুন", key="input_student_name")
+                        st.caption("ℹ️ নাম লেখার পর নিচে **'এগিয়ে যান ➔ পরীক্ষা শুরু করুন'** বাটনে ক্লিক করুন।")
+                        
+                        if student_name.strip():
+                            if st.button("এগিয়ে যান ➔ পরীক্ষা শুরু করুন"):
+                                st.session_state['confirmed_student_name'] = student_name.strip()
+                                st.session_state['exam_start_time'] = time.time()
+                                st.session_state['selected_exam_subject'] = selected_subject
+                                st.rerun()
+                else:
+                    selected_subject = st.session_state.get('selected_exam_subject', available_subjects[0])
+                    df = all_q_df[all_q_df['Subject'] == selected_subject].reset_index(drop=True)
+                    
+                    duration = 10
+                    if os.path.exists(CONFIG_FILE):
+                        conf_df = pd.read_csv(CONFIG_FILE)
+                        match_conf = conf_df[conf_df['Subject'] == selected_subject]
+                        if not match_conf.empty:
+                            duration = int(match_conf.iloc[0]['Duration'])
+                    
+                    total_marks = len(df)
                     current_student = st.session_state['confirmed_student_name']
                     active_df = df.copy()
                     
@@ -422,39 +472,12 @@ else:
                         score = 0
                         total = total_marks
                         
-                        st.markdown("---")
-                        st.subheader(f"🎉 অভিনন্দন, **{current_student}**! আপনার পরীক্ষা সফলভাবে জমা হয়েছে।")
-                        
                         for i, row in active_df.iterrows():
                             ans = user_answers.get(i)
                             correct = str(row['Correct_Answer'])
                             if ans and ans.strip() == correct.strip():
                                 score += 1
 
-                        # ফলাফল বড় ও বোল্ড আকারে প্রদর্শন (যেমন: **১০ এর মধ্যে ৫**)
-                        st.markdown(f"### 🏆 আপনার প্রাপ্ত ফলাফল: **{total} এর মধ্যে {score}** (বিষয়: {selected_subject})")
-                        st.write("---")
-                        
-                        st.subheader("📊 বিস্তারিত উত্তরমালা ও মূল্যায়ন")
-                        st.write("---")
-                        
-                        for i, row in active_df.iterrows():
-                            ans = user_answers.get(i)
-                            correct = str(row['Correct_Answer'])
-                            
-                            st.markdown(f"##### **প্রশ্ন {i+1}: {str(row['Question'])}**")
-                            
-                            if ans and ans.strip() == correct.strip():
-                                st.success(f"✅ সঠিক উত্তর! (আপনার উত্তর: {ans})")
-                            else:
-                                st.error(f"❌ ভুল উত্তর! (আপনার উত্তর ছিল: {ans if ans else 'দেওয়া হয়নি'})")
-                                st.info(f"👉 **সঠিক উত্তর:** {correct}")
-                            
-                            st.markdown(f"💡 **ব্যাখ্যা:** {row['Explanation']}")
-                            st.write("---")
-                        
-                        st.balloons()
-                        
                         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         new_result = pd.DataFrame([{
                             "Student Name": current_student,
@@ -472,9 +495,19 @@ else:
                             
                         updated_res.to_csv(RESULT_FILE, index=False)
                         
-                        st.session_state['confirmed_student_name'] = ""
+                        # রেজাল্ট ডেটা সেশনে সেভ করে সাবমিটেড স্ট্যাটাস ট্রু করা
+                        st.session_state['exam_submitted'] = True
+                        st.session_state['last_result_data'] = {
+                            "student_name": current_student,
+                            "subject": selected_subject,
+                            "score": score,
+                            "total": total,
+                            "active_df": active_df,
+                            "user_answers": user_answers
+                        }
+                        st.balloons()
+                        st.rerun()
                     
-                    # টাইমার প্রতি সেকেন্ডে কমার জন্য অটো রিলোড লজিক
                     if remaining_seconds > 0:
                         time.sleep(1)
                         st.rerun()
