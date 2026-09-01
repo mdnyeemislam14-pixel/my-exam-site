@@ -7,19 +7,22 @@ from datetime import datetime
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="centered")
 
-# Streamlit এর ডিফল্ট হেডার, ফর্ক বাটন, ফুটার এবং ব্র্যান্ডিং হাইড করার জন্য CSS
+# Streamlit এর ডিফল্ট হেডার, ফুটার এবং ব্র্যান্ডিং হাইড করার সিএসএস
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .stAppToolbar {visibility: hidden;}
+    div[data-testid="stStatusWidget"] {visibility: hidden;}
+    .viewerBadge_container__1QSob {visibility: hidden;}
+    #GithubIcon {visibility: hidden;}
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 st.title("📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম")
-st.caption("✨ Powered by **Job Efforts**")
+st.markdown("### ✨ Powered by **Job Efforts**")
 
 RESULT_FILE = "results.csv"
 QUESTIONS_FILE = "saved_questions.csv"
@@ -66,14 +69,14 @@ if st.session_state['is_admin_logged_in']:
     ])
     is_admin = True
 else:
-    # শিক্ষার্থীরা শুধু তাদের নির্দিষ্ট মেনুটাই দেখতে পাবে
+    # শিক্ষার্থীরা সবসময় এই মেনুগুলো দেখতে পাবে
     student_menu = st.sidebar.radio("শিক্ষার্থী মেনু:", [
         "📝 পরীক্ষা দিন",
         "🏆 ক্লাসের মেধা তালিকা (Leaderboard)"
     ])
     is_admin = False
     
-    # সাধারণ শিক্ষার্থীদের চোখের আড়ালে রাখার জন্য অ্যাডমিন লগইন অপশনটি নিচের দিকে একটি ড্রপডাউনে রাখা হয়েছে
+    # শিক্ষক/অ্যাডমিন লগইন অপশন
     with st.sidebar.expander("🔐 শিক্ষক/অ্যাডমিন লগইন"):
         entered_password = st.text_input("পাসওয়ার্ড দিন:", type="password", key="admin_pwd_input")
         if st.button("🔑 লগইন করুন"):
@@ -81,7 +84,7 @@ else:
                 st.session_state['is_admin_logged_in'] = True
                 st.rerun()
             else:
-                st.error("❌ ভুল পাসওয়ার্ড!")
+                st.sidebar.error("❌ ভুল পাসওয়ার্ড!")
 
 # ==========================================
 # 📊 ১. অ্যাডমিন: মেধা তালিকা ও রিপোর্ট সেক্টর
@@ -125,7 +128,7 @@ if is_admin and admin_menu == "📊 সকল শিক্ষার্থীর 
         st.warning("এখনো কোনো ফলাফল জমা হয়নি।")
 
 # ==========================================
-# 🏆 ২. শিক্ষার্থী: ক্লাসের মেধা তালিকা দেখার পেজ
+# 🏆 ২. শিক্ষার্থী: ক্লাসের মেধা তালিকা দেখার পেজ (মেনু থেকে যেকোনো সময় দেখা যাবে)
 # ==========================================
 elif not is_admin and student_menu == "🏆 ক্লাসের মেধা তালিকা (Leaderboard)":
     st.subheader("🏆 ক্লাসের লাইভ মেধা তালিকা")
@@ -149,7 +152,7 @@ elif not is_admin and student_menu == "🏆 ক্লাসের মেধা �
         st.info("এখনো কেউ পরীক্ষা জমা দেয়নি।")
 
 # ==========================================
-# 📝 ৩. প্রশ্ন আপলোড বা পরীক্ষার্থীদের মূল পরীক্ষার পেজ
+# 📝 ৩. প্রশ্ন আপলোড (অ্যাডমিন) অথবা পরীক্ষা দেওয়া (শিক্ষার্থী)
 # ==========================================
 else:
     if is_admin:
@@ -379,7 +382,7 @@ else:
         if not all_q_df.empty and 'Subject' in all_q_df.columns:
             available_subjects = all_q_df['Subject'].unique().tolist()
             
-            # যদি পরীক্ষা ইতিমধ্যেই জমা হয়ে গিয়ে থাকে, তবে ফলাফল স্ক্রিন স্থিরভাবে দেখাবে
+            # যদি পরীক্ষা ইতিমধ্যেই জমা হয়ে গিয়ে থাকে, তবে ফলাফল স্ক্রিন দেখাবে
             if st.session_state['exam_submitted']:
                 res_info = st.session_state['last_result_data']
                 if res_info:
@@ -425,7 +428,6 @@ else:
                     selected_subject = st.selectbox("কোন বিষয়ের পরীক্ষা দিতে চান তা সিলেক্ট করুন:", available_subjects)
                     st.write("---")
                     
-                    # সুনির্দিষ্ট বিষয়ের প্রশ্ন ফিল্টার করা
                     df = all_q_df[all_q_df['Subject'] == selected_subject].reset_index(drop=True)
                     
                     duration = 10
@@ -479,10 +481,15 @@ else:
                     mins = remaining_seconds // 60
                     secs = remaining_seconds % 60
                     
+                    # টাইমারটি সাইডবার এবং মূল পাতায় উভয় জায়গায় রাখা হলো
                     st.sidebar.markdown("---")
                     st.sidebar.subheader("⏱️ পরীক্ষার লাইভ টাইমার")
                     st.sidebar.markdown(f"⏳ **বাকি সময়:**\n### `{mins:02d} মিনিট {secs:02d} সেকেন্ড`")
                     st.sidebar.caption(f"পরীক্ষার্থী: {current_student} ({selected_subject})")
+                    
+                    # মূল পেজের উপরেও টাইমার বক্স যুক্ত করা হলো যাতে সরাসরি দেখা যায়
+                    timer_container = st.empty()
+                    timer_container.markdown(f"### ⏳ পরীক্ষার বাকি সময়: `{mins:02d} মিনিট {secs:02d} সেকেন্ড`")
                     
                     st.success(f"স্বাগতম, **{current_student}**! **{selected_subject}** বিষয়ের পরীক্ষা শুরু করুন।")
                     st.divider()
