@@ -199,7 +199,7 @@ else:
                             final_conf = config_df
                         final_conf.to_csv(CONFIG_FILE, index=False)
                         
-                        st.sidebar.success(f"✅ '{subject_name}' বিষয়ের প্রশ্ন ও সময় সফলভাবে সেভ হয়েছে!")
+                        st.sidebar.success(f"✅ '{subject_name}' বিষয়ের প্রশ্ন ও সময় সফলভাবে স্থায়ীভাবে সেভ হয়েছে!")
 
         else:
             uploaded_file = st.sidebar.file_uploader("questions.xlsx বা csv ফাইল আপলোড করুন:", type=["xlsx", "csv"])
@@ -291,25 +291,38 @@ else:
                                     final_conf = config_df
                                 final_conf.to_csv(CONFIG_FILE, index=False)
                                 
-                                st.sidebar.success(f"✅ '{subject_name}' বিষয়ের প্রশ্ন ও সময় সফলভাবে সেভ হয়েছে!")
+                                st.sidebar.success(f"✅ '{subject_name}' বিষয়ের ফাইল থেকে প্রশ্ন ও সময় সফলভাবে স্থায়ীভাবে সেভ হয়েছে!")
                     else:
                         st.sidebar.error("⚠️ সঠিক কলাম রেঞ্জ পাওয়া যায়নি।")
                 except Exception as e:
                     st.sidebar.error(f"ফাইল পড়তে সমস্যা হয়েছে: {e}")
 
+        # অ্যাডমিন প্যানেলে স্থায়ীভাবে সংরক্ষিত বিষয়সমূহ ও প্রশ্ন ডিলিট করার ব্যবস্থা (ক্রস বা ডিলিট বাটন)
         st.write("---")
-        st.subheader("📂 সাইটে বর্তমানে সংরক্ষিত বিষয়সমূহ")
+        st.subheader("📂 স্থায়ীভাবে সংরক্ষিত বিষয়সমূহ ও প্রশ্ন ব্যবস্থাপনা")
+        st.info("💡 এখানে সেভ করা প্রশ্নগুলো সার্ভারে নিরাপদভাবে সংরক্ষিত থাকে। আপনি নিজে 'মুছুন' বাটন ক্লিক না করা পর্যন্ত এগুলো মুছে যাবে না।")
+        
         if os.path.exists(QUESTIONS_FILE):
             q_check_df = pd.read_csv(QUESTIONS_FILE)
             if not q_check_df.empty and 'Subject' in q_check_df.columns:
                 saved_subs = q_check_df['Subject'].unique().tolist()
                 for sub in saved_subs:
                     count = len(q_check_df[q_check_df['Subject'] == sub])
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
-                        st.markdown(f"✔️ **বিষয়:** `{sub}` (প্রশ্ন সংখ্যা: {count}টি)")
-                    with col2:
-                        if st.button(f"🗑️ মুছুন", key=f"del_sub_{sub}"):
+                    
+                    with st.expander(f"📁 বিষয়: {sub} (প্রশ্ন সংখ্যা: {count}টি)"):
+                        sub_questions = q_check_df[q_check_df['Subject'] == sub].reset_index(drop=True)
+                        
+                        for idx, q_row in sub_questions.iterrows():
+                            st.markdown(f"**প্রশ্ন {idx+1}:** {q_row['Question']}")
+                            st.markdown(f"- (ক) {q_row['Option_A']}")
+                            st.markdown(f"- (খ) {q_row['Option_B']}")
+                            st.markdown(f"- (গ) {q_row['Option_C']}")
+                            st.markdown(f"- (ঘ) {q_row['Option_D']}")
+                            st.success(f"✔️ সঠিক উত্তর: {q_row['Correct_Answer']}")
+                            st.info(f"💡 ব্যাখ্যা: {q_row['Explanation']}")
+                            st.write("---")
+                        
+                        if st.button(f"❌ 🗑️ '{sub}' বিষয়ের সকল প্রশ্ন চিরতরে মুছুন", key=f"del_sub_{sub}"):
                             new_q_df = q_check_df[q_check_df['Subject'] != sub]
                             new_q_df.to_csv(QUESTIONS_FILE, index=False)
                             
@@ -317,7 +330,7 @@ else:
                                 conf_df = pd.read_csv(CONFIG_FILE)
                                 conf_df = conf_df[conf_df['Subject'] != sub]
                                 conf_df.to_csv(CONFIG_FILE, index=False)
-                            st.success(f"'{sub}' বিষয়টি মুছে ফেলা হয়েছে!")
+                            st.success(f"'{sub}' বিষয়টি সফলভাবে মুছে ফেলা হয়েছে!")
                             st.rerun()
             else:
                 st.info("কোনো বিষয় সেভ করা নেই।")
@@ -360,7 +373,6 @@ else:
                     st.success(f"স্বাগতম, **{student_name}**! **{selected_subject}** বিষয়ের পরীক্ষা শুরু করুন।")
                     st.divider()
                     
-                    # লাইভ কাউন্টডাউন টাইমার ডিসপ্লে করার প্লেসহোল্ডার
                     timer_placeholder = st.empty()
                     
                     user_answers = {}
@@ -377,7 +389,6 @@ else:
                         )
                         st.write("---")
                         
-                    # লাইভ টাইমার সিমুলেশন (সময় কমতে থাকা দেখানোর জন্য)
                     total_seconds = duration * 60
                     minutes_left = total_seconds // 60
                     seconds_left = total_seconds % 60
@@ -387,7 +398,6 @@ else:
                         score = 0
                         total = total_marks
                         
-                        # ঠিক জমা দেওয়ার সাথে সাথেই ফলাফল সবার ওপরে দেখানোর ব্যবস্থা
                         st.markdown("---")
                         st.subheader(f"🎉 অভিনন্দন, **{student_name}**! আপনার পরীক্ষা সফলভাবে জমা হয়েছে।")
                         st.success(f"🏆 **আপনার প্রাপ্ত ফলাফল:** `{score}` / `{total}` (বিষয়: {selected_subject})")
@@ -412,7 +422,6 @@ else:
                             st.markdown(f"💡 **ব্যাখ্যা:** {row['Explanation']}")
                             st.write("---")
                         
-                        # আপডেট স্কোর বসিয়ে ফাইনাল মেট্রিক দেখানো
                         st.metric(label=f"{student_name}-এর মোট ফলাফল ({selected_subject})", value=f"{score} / {total}")
                         st.balloons()
                         
