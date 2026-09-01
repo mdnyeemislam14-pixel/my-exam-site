@@ -90,10 +90,12 @@ if entered_password == ADMIN_PASSWORD:
 
                 total_cols = len(raw_df.columns)
                 col_choices = {}
+                
+                # প্রতি ৬ কলাম পরপর সাবজেক্ট (যেমন: A-F, G-L ইত্যাদি)
                 for idx in range(0, total_cols, 6):
                     start_letter = get_column_letter(idx)
-                    end_letter = get_column_letter(min(idx + 4, total_cols - 1))
-                    col_choices[idx] = f"কলাম {start_letter} থেকে {end_letter} (প্রশ্ন, ক, খ, গ, ঘ)"
+                    end_letter = get_column_letter(min(idx + 5, total_cols - 1))
+                    col_choices[idx] = f"কলাম {start_letter} থেকে {end_letter} (প্রশ্ন, অপশন ৪টি ও উত্তর)"
 
                 selected_start_idx = st.sidebar.selectbox(
                     "কোন সাবজেক্টের কলাম থেকে প্রশ্ন নিতে চান?",
@@ -102,14 +104,13 @@ if entered_password == ADMIN_PASSWORD:
                 )
                 
                 start_idx = selected_start_idx
-                if start_idx + 4 < total_cols:
-                    sub_df = raw_df.iloc[:, start_idx:start_idx+5].copy()
-                    sub_df.columns = ['Question', 'Option_A', 'Option_B', 'Option_C', 'Option_D']
+                if start_idx + 5 < total_cols:
+                    # ৬টি কলাম কেটে নেওয়া (প্রশ্ন, ক, খ, গ, ঘ, উত্তর)
+                    sub_df = raw_df.iloc[:, start_idx:start_idx+6].copy()
+                    sub_df.columns = ['Question', 'Option_A', 'Option_B', 'Option_C', 'Option_D', 'Correct_Answer']
                     
                     sub_df = sub_df.dropna(subset=['Question']).reset_index(drop=True)
                     
-                    if 'Correct_Answer' not in sub_df.columns:
-                        sub_df['Correct_Answer'] = sub_df['Option_A']
                     if 'Explanation' not in sub_df.columns:
                         sub_df['Explanation'] = 'কোন ব্যাখ্যা দেওয়া হয়নি।'
                     
@@ -194,7 +195,6 @@ if df is not None and not df.empty:
                 ans = user_answers[i]
                 correct = str(row['Correct_Answer'])
                 
-                # ফলাফলের নিচে মূল প্রশ্নটি স্পষ্টভাবে প্রদর্শন করা
                 st.markdown(f"##### **প্রশ্ন {i+1}: {str(row['Question'])}**")
                 
                 if ans and ans.strip() == correct.strip():
