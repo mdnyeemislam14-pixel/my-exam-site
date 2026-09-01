@@ -125,7 +125,6 @@ if entered_password == ADMIN_PASSWORD:
                     if filter_type == "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন":
                         max_q = len(sub_df)
                         num_q = st.sidebar.number_input(f"কতটি প্রশ্ন রাখতে চান? (সর্বোচ্চ {max_q})", min_value=1, max_value=max_q, value=min(10, max_q))
-                        # এখানে সরাসরি স্যাম্পল না করে বাটনে ক্লিক করলে হবে
                     elif filter_type == "ম্যানুয়ালি বেছে বেছে প্রশ্ন সিলেক্ট":
                         selected_indices = st.sidebar.multiselect(
                             "তালিকা থেকে প্রশ্নগুলো নির্বাচন করুন:",
@@ -135,7 +134,6 @@ if entered_password == ADMIN_PASSWORD:
                         if selected_indices:
                             final_filtered_df = sub_df.loc[selected_indices].reset_index(drop=True)
 
-                    # 🚀 চূড়ান্ত সাবমিট বাটন (এর মাধ্যমে প্রশ্ন ফিক্সড হয়ে যাবে)
                     if st.sidebar.button("📌 এই প্রশ্নগুলো দিয়ে পরীক্ষা সেট করুন"):
                         if filter_type == "র‍্যান্ডম (Random) নির্দিষ্ট সংখ্যক প্রশ্ন":
                             final_filtered_df = sub_df.sample(n=num_q).reset_index(drop=True)
@@ -163,7 +161,6 @@ if df is not None and not df.empty:
     student_name = st.text_input("পরীক্ষার্থীর নাম লিখুন:", placeholder="আপনার নাম")
     
     if student_name:
-        # পরীক্ষার্থী নাম দেওয়ার পর প্রশ্নগুলো একবারের জন্য ফিক্সড (লক) করে নেওয়া
         if 'exam_active_df' not in st.session_state:
             st.session_state['exam_active_df'] = df.copy()
             
@@ -190,20 +187,26 @@ if df is not None and not df.empty:
             score = 0
             total = len(active_df)
             
-            st.subheader("📊 আপনার পরীক্ষার ফলাফল")
+            st.subheader("📊 আপনার পরীক্ষার ফলাফল ও মূল্যায়ন")
+            st.write("---")
             
             for i, row in active_df.iterrows():
                 ans = user_answers[i]
                 correct = str(row['Correct_Answer'])
                 
+                # ফলাফলের নিচে মূল প্রশ্নটি স্পষ্টভাবে প্রদর্শন করা
+                st.markdown(f"##### **প্রশ্ন {i+1}: {str(row['Question'])}**")
+                
                 if ans and ans.strip() == correct.strip():
                     score += 1
-                    st.success(f"✅ **প্রশ্ন {i+1}: সঠিক উত্তর!**")
+                    st.success(f"✅ সঠিক উত্তর! (আপনার উত্তর: {ans})")
                 else:
-                    st.error(f"❌ **প্রশ্ন {i+1}: ভুল উত্তর!** (আপনার উত্তর: {ans if ans else 'দেওয়া হয়নি'})")
-                    st.info(f"👉 **সঠিক উত্তর:** {correct}\n\n💡 **ব্যাখ্যা:** {row['Explanation']}")
+                    st.error(f"❌ ভুল উত্তর! (আপনার উত্তর ছিল: {ans if ans else 'দেওয়া হয়নি'})")
+                    st.info(f"👉 **সঠিক উত্তর:** {correct}")
+                
+                st.markdown(f"💡 **ব্যাখ্যা:** {row['Explanation']}")
+                st.write("---")
             
-            st.divider()
             st.metric(label=f"{student_name}-এর মোট ফলাফল", value=f"{score} / {total}")
             st.balloons()
             
