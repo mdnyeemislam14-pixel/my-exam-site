@@ -39,7 +39,7 @@ if entered_password == ADMIN_PASSWORD:
                     opt_c = lines[3]
                     opt_d = lines[4]
                     
-                    correct_ans = ""
+                    correct_ans = opt_a
                     explanation = "কোন ব্যাখ্যা নেই।"
                     
                     for l in lines[5:]:
@@ -77,8 +77,32 @@ if entered_password == ADMIN_PASSWORD:
                 else:
                     raw_df = pd.read_excel(uploaded_file)
                 
-                # কলামের নামের অতিরিক্ত স্পেস বা টাইপিং ভুল এড়াতে নামগুলো ক্লিন করা
+                # কলামের নামগুলোর অতিরিক্ত স্পেস দূর করা
                 raw_df.columns = raw_df.columns.str.strip()
+                
+                # আপনার এক্সেল কলামগুলোর সাথে কোডের কলাম নাম মেলানো
+                col_names = list(raw_df.columns)
+                rename_dict = {}
+                
+                # প্রথম কলামটিকে প্রশ্ন ধরে নেওয়া
+                if len(col_names) > 0:
+                    rename_dict[col_names[0]] = 'Question'
+                if 'ক' in col_names:
+                    rename_dict['ক'] = 'Option_A'
+                if 'খ' in col_names:
+                    rename_dict['খ'] = 'Option_B'
+                if 'গ' in col_names:
+                    rename_dict['গ'] = 'Option_C'
+                if 'ঘ' in col_names:
+                    rename_dict['ঘ'] = 'Option_D'
+                
+                raw_df = raw_df.rename(columns=rename_dict)
+                
+                # যদি Correct_Answer বা Explanation এক্সসেলে না থাকে তবে ডিফল্ট মান বসানো
+                if 'Correct_Answer' not in raw_df.columns:
+                    raw_df['Correct_Answer'] = raw_df['Option_A'] # ডিফল্ট প্রথম অপশন
+                if 'Explanation' not in raw_df.columns:
+                    raw_df['Explanation'] = 'কোন ব্যাখ্যা দেওয়া হয়নি।'
                 
                 st.sidebar.subheader("🎯 প্রশ্ন ফিল্টার অপশন")
                 filter_type = st.sidebar.radio("কীভাবে প্রশ্ন সিলেক্ট করতে চান?", [
@@ -129,7 +153,7 @@ if df is not None and not df.empty:
         user_answers = {}
         
         for i, row in df.iterrows():
-            st.markdown(f"##### **{i+1}. {row['Question']}**")
+            st.markdown(f"##### **{i+1}. {str(row['Question'])}**")
             options = [str(row['Option_A']), str(row['Option_B']), str(row['Option_C']), str(row['Option_D'])]
             
             user_answers[i] = st.radio(
