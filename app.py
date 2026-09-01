@@ -77,30 +77,19 @@ if entered_password == ADMIN_PASSWORD:
                 else:
                     raw_df = pd.read_excel(uploaded_file)
                 
-                # কলামের নামগুলোর অতিরিক্ত স্পেস দূর করা
-                raw_df.columns = raw_df.columns.str.strip()
+                # কলামের অবস্থান (Position) অনুযায়ী ডেটা নিশ্চিত করা
+                cols = raw_df.columns
+                if len(cols) >= 5:
+                    raw_df = raw_df.rename(columns={
+                        cols[0]: 'Question',
+                        cols[1]: 'Option_A',
+                        cols[2]: 'Option_B',
+                        cols[3]: 'Option_C',
+                        cols[4]: 'Option_D'
+                    })
                 
-                # আপনার এক্সেল কলামগুলোর সাথে কোডের কলাম নাম মেলানো
-                col_names = list(raw_df.columns)
-                rename_dict = {}
-                
-                # প্রথম কলামটিকে প্রশ্ন ধরে নেওয়া
-                if len(col_names) > 0:
-                    rename_dict[col_names[0]] = 'Question'
-                if 'ক' in col_names:
-                    rename_dict['ক'] = 'Option_A'
-                if 'খ' in col_names:
-                    rename_dict['খ'] = 'Option_B'
-                if 'গ' in col_names:
-                    rename_dict['গ'] = 'Option_C'
-                if 'ঘ' in col_names:
-                    rename_dict['ঘ'] = 'Option_D'
-                
-                raw_df = raw_df.rename(columns=rename_dict)
-                
-                # যদি Correct_Answer বা Explanation এক্সসেলে না থাকে তবে ডিফল্ট মান বসানো
                 if 'Correct_Answer' not in raw_df.columns:
-                    raw_df['Correct_Answer'] = raw_df['Option_A'] # ডিফল্ট প্রথম অপশন
+                    raw_df['Correct_Answer'] = raw_df['Option_A']
                 if 'Explanation' not in raw_df.columns:
                     raw_df['Explanation'] = 'কোন ব্যাখ্যা দেওয়া হয়নি।'
                 
