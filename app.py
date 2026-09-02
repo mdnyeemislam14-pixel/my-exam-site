@@ -96,8 +96,11 @@ if 'last_result_data' not in st.session_state:
 if 'selected_exam_subject' not in st.session_state:
     st.session_state['selected_exam_subject'] = ""
 
-# মোবাইলে সহজে দেখার জন্য মূল পাতায় ট্যাব বা নেভিগেশন রাখা হলো
-if not st.session_state['is_admin_logged_in']:
+if 'exam_in_progress' not in st.session_state:
+    st.session_state['exam_in_progress'] = False
+
+# মোবাইলে সহজে দেখার জন্য মূল পাতায় ট্যাব বা নেভিগেশন রাখা হলো (পরীক্ষা চলাকালীন এটি হাই থাকবে)
+if not st.session_state['is_admin_logged_in'] and not st.session_state['exam_in_progress']:
     mobile_nav = st.radio(
         "নেভিগেশন ট্যাব:",
         ["📝 পরীক্ষা দিন", "🏆 ক্লাসের মেধা তালিকা (Leaderboard)"],
@@ -105,6 +108,9 @@ if not st.session_state['is_admin_logged_in']:
         label_visibility="collapsed"
     )
     student_menu = mobile_nav
+    is_admin = False
+elif st.session_state['exam_in_progress']:
+    student_menu = "📝 পরীক্ষা দিন"
     is_admin = False
 else:
     student_menu = None
@@ -123,6 +129,7 @@ if st.session_state['is_admin_logged_in']:
         st.session_state['confirmed_student_name'] = ""
         st.session_state['exam_submitted'] = False
         st.session_state['selected_exam_subject'] = ""
+        st.session_state['exam_in_progress'] = False
         st.rerun()
         
     admin_menu = st.sidebar.radio("অ্যাডমিন মেনু:", [
@@ -131,14 +138,15 @@ if st.session_state['is_admin_logged_in']:
     ])
     is_admin = True
 else:
-    with st.sidebar.expander("🔐 শিক্ষক/অ্যাডমিন লগইন"):
-        entered_password = st.text_input("পাসওয়ার্ড দিন:", type="password", key="admin_pwd_input")
-        if st.button("🔑 লগইন"):
-            if entered_password == ADMIN_PASSWORD:
-                st.session_state['is_admin_logged_in'] = True
-                st.rerun()
-            else:
-                st.sidebar.error("❌ ভুল পাসওয়ার্ড!")
+    if not st.session_state['exam_in_progress']:
+        with st.sidebar.expander("🔐 শিক্ষক/অ্যাডমিন লগইন"):
+            entered_password = st.text_input("পাসওয়ার্ড দিন:", type="password", key="admin_pwd_input")
+            if st.button("🔑 লগইন"):
+                if entered_password == ADMIN_PASSWORD:
+                    st.session_state['is_admin_logged_in'] = True
+                    st.rerun()
+                else:
+                    st.sidebar.error("❌ ভুল পাসওয়ার্ড!")
 
 # ==========================================
 # 📊 ১. অ্যাডমিন: মেধা তালিকা ও রিপোর্ট সেক্টর
@@ -394,6 +402,7 @@ else:
                         st.session_state['exam_submitted'] = False
                         st.session_state['confirmed_student_name'] = ""
                         st.session_state['selected_exam_subject'] = ""
+                        st.session_state['exam_in_progress'] = False
                         st.session_state['last_result_data'] = None
                         st.rerun()
 
@@ -415,7 +424,7 @@ else:
                         
                         opts = [str(row['Option_A']).strip(), str(row['Option_B']).strip(), str(row['Option_C']).strip(), str(row['Option_D']).strip()]
                         
-                        # সঠিক উত্তর নির্ধারণ করার নিখুঁত লজিক (বর্ণ বা পূর্ণাঙ্গ টেক্সট যেকোনো ফরম্যাট হ্যান্ডেল করবে)
+                        # সঠিক উত্তর নির্ধারণ করার নিখুঁত স্মার্ট লজিক
                         correct_val = ""
                         for opt in opts:
                             opt_lower = opt.lower()
@@ -454,7 +463,7 @@ else:
                             </div>
                         """, unsafe_allow_html=True)
             else:
-                if not st.session_state['confirmed_student_name']:
+                if not st.session_state['exam_in_progress']:
                     st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন")
                     selected_subject = st.selectbox("বিষয়:", available_subjects)
                     st.write("---")
@@ -478,6 +487,7 @@ else:
                                     st.session_state['confirmed_student_name'] = student_name.strip()
                                     st.session_state['selected_exam_subject'] = selected_subject
                                     st.session_state['exam_start_time'] = time.time()
+                                    st.session_state['exam_in_progress'] = True
                                     st.rerun()
                                 else:
                                     st.error("⚠️ নাম লিখুন।")
@@ -569,6 +579,7 @@ else:
                         updated_res.to_csv(RESULT_FILE, index=False)
                         
                         st.session_state['exam_submitted'] = True
+                        st.session_state['exam_in_progress'] = False
                         st.session_state['last_result_data'] = {
                             "student_name": current_student, "subject": selected_subject,
                             "score": score, "total": len(active_df), "active_df": active_df, "user_answers": user_answers
