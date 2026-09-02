@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import random
 import os
 import json
 import re
@@ -12,26 +11,34 @@ st.set_page_config(
     page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", 
     page_icon="📝", 
     layout="wide", 
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
-# প্রফেশনাল স্টাইলিং
+# প্রফেশনাল স্টাইলিং ও ফুটার ফিরিয়ে আনার জন্য CSS
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
     .stAppToolbar {visibility: hidden;}
     div[data-testid="stStatusWidget"] {visibility: hidden;}
-    [data-testid="stSidebar"] {display: none;} /* সাইডবার পুরোপুরি লুকিয়ে দেওয়া হলো যাতে কোনো কনফিউশন না থাকে */
+
+    /* বাঁপাশের সাইডবার সবসময় দৃশ্যমান ও সুন্দর রাখার স্টাইল */
+    [data-testid="stSidebar"] {
+        display: block !important;
+        background-color: #f8f9fa;
+        border-right: 1px solid #e0e0e0;
+    }
+
+    /* ফুটার দৃশ্যমান করা */
+    footer {
+        visibility: visible !important;
+        text-align: center;
+        color: #666;
+        font-size: 14px;
+        padding: 10px;
+    }
 
     html, body, [class*="css"] {
         font-size: 16px !important;
-    }
-
-    .block-container {
-        max-width: 900px;
-        padding-top: 1rem !important;
-        margin: 0 auto;
     }
 
     .question-card {
@@ -69,14 +76,6 @@ hide_streamlit_style = """
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-# ব্যানার
-st.markdown("""
-    <div style="text-align: center; padding: 18px; background: linear-gradient(135deg, #654ea3, #eaafc8); border-radius: 10px; margin-bottom: 15px; color: white;">
-        <h1 style="margin: 0; font-size: 24px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h1>
-        <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.95;">বিসিএস, ব্যাংক, প্রাথমিক সহকারী শিক্ষক নিয়োগ এবং NTRCA সহ সকল চাকরির প্রস্তুতি</p>
-    </div>
-""", unsafe_allow_html=True)
 
 RESULT_FILE = "results.csv"
 QUESTIONS_FILE = "saved_questions.csv"
@@ -138,46 +137,55 @@ if 'exam_in_progress' not in st.session_state:
     st.session_state['exam_in_progress'] = False
 
 # ==========================================
-# ⚙️ মূল স্ক্রিনের কন্ট্রোল ও মোড সিলেকশন বার
+# 📌 বাঁপাশের সাইডবার (অ্যাডমিন প্যানেল ও মেনু)
 # ==========================================
-col_top1, col_top2 = st.columns([3, 1])
-
-with col_top1:
-    if not st.session_state['exam_in_progress']:
-        if st.session_state['is_admin_logged_in']:
-            current_mode = st.radio("অ্যাডমিন মোড মেনু:", ["📝 প্রশ্ন আপলোড ও সেটআপ", "📊 সকল শিক্ষার্থীর ফলাফল"], horizontal=True, key="top_admin_menu")
+with st.sidebar:
+    st.markdown("### 🛠️ কন্ট্রোল প্যানেল")
+    st.write("---")
+    
+    is_admin = st.session_state['is_admin_logged_in']
+    
+    if not is_admin:
+        with st.expander("🔐 শিক্ষক লগইন", expanded=True):
+            admin_pwd = st.text_input("পাসওয়ার্ড দিন:", type="password", key="sidebar_admin_pwd")
+            if st.button("লগইন করুন", key="sidebar_login_btn"):
+                if admin_pwd == ADMIN_PASSWORD:
+                    st.session_state['is_admin_logged_in'] = True
+                    st.rerun()
+                else:
+                    st.error("ভুল পাসওয়ার্ড!")
+        
+        st.write("---")
+        if not st.session_state['exam_in_progress']:
+            current_mode = st.radio("মোড নির্বাচন:", ["📝 পরীক্ষা দিন", "🏆 ক্লাসের মেধা তালিকা দেখুন"], key="sidebar_student_menu")
         else:
-            current_mode = st.radio("মোড নির্বাচন:", ["📝 পরীক্ষা দিন", "🏆 ক্লাসের মেধা তালিকা দেখুন"], horizontal=True, key="top_student_menu")
+            current_mode = "📝 পরীক্ষা দিন"
+            st.info("⚠️ পরীক্ষা চলমান রয়েছে। মেনু পরিবর্তন করা যাবে না।")
     else:
-        current_mode = "📝 পরীক্ষা দিন"
-        st.info("⚠️ পরীক্ষা চলমান রয়েছে।")
-
-with col_top2:
-    if st.session_state['is_admin_logged_in']:
-        if st.button("🚪 লগ আউট", type="secondary", key="main_logout_btn"):
+        st.success("✅ অ্যাডমিন হিসেবে যুক্ত আছেন")
+        if st.button("🚪 লগ আউট করুন", type="secondary", key="sidebar_logout_btn"):
             st.session_state['is_admin_logged_in'] = False
             st.session_state['confirmed_student_name'] = ""
             st.session_state['exam_submitted'] = False
             st.session_state['selected_exam_subject'] = ""
             st.session_state['exam_in_progress'] = False
             st.rerun()
-    else:
-        with st.expander("🔐 শিক্ষক লগইন"):
-            admin_pwd = st.text_input("পাসওয়ার্ড:", type="password", key="main_admin_pwd")
-            if st.button("লগইন", key="main_login_btn"):
-                if admin_pwd == ADMIN_PASSWORD:
-                    st.session_state['is_admin_logged_in'] = True
-                    st.rerun()
-                else:
-                    st.error("ভুল পাসওয়ার্ড!")
+            
+        st.write("---")
+        current_mode = st.radio("অ্যাডমিন মেনু:", ["📝 প্রশ্ন আপলোড ও সেটআপ", "📊 সকল শিক্ষার্থীর ফলাফল"], key="sidebar_admin_menu")
 
-st.write("---")
+# ==========================================
+# মূল পেজের কনটেন্ট
+# ==========================================
+st.markdown("""
+    <div style="text-align: center; padding: 18px; background: linear-gradient(135deg, #654ea3, #eaafc8); border-radius: 10px; margin-bottom: 20px; color: white;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h1>
+        <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.95;">বিসিএস, ব্যাংক, প্রাথমিক সহকারী শিক্ষক নিয়োগ এবং NTRCA সহ সকল চাকরির প্রস্তুতি</p>
+    </div>
+""", unsafe_allow_html=True)
 
 is_admin = st.session_state['is_admin_logged_in']
 
-# ==========================================
-# মূল পেজ ও লজিক হ্যান্ডলিং
-# ==========================================
 if is_admin and current_mode == "📊 সকল শিক্ষার্থীর ফলাফল":
     st.subheader("🏆 সকল শিক্ষার্থীর ফলাফল তালিকা")
     st.write("---")
@@ -684,3 +692,13 @@ else:
                         _grade_and_submit(user_answers, note_auto=False)
         else:
             st.warning("⚠️ বর্তমানে কোনো প্রশ্ন সেট করা নেই।")
+
+# ==========================================
+# Powered by Footer সংযোজন
+# ==========================================
+st.markdown("""
+    <hr style="margin-top: 40px; margin-bottom: 10px; border: none; border-top: 1px solid #e0e0e0;">
+    <div style="text-align: center; color: #777; font-size: 13px; margin-bottom: 20px;">
+        Powered by <b>Job Efforts</b>
+    </div>
+""", unsafe_allow_html=True)
