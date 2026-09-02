@@ -10,7 +10,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="wide", initial_sidebar_state="collapsed")
 
-# কাস্টম সিএসএস: স্ট্রিমলিটের ডিফল্ট সাইডবার লুকিয়ে রাখা এবং নিজস্ব ফিক্সড লেফট প্যানেল তৈরি করা
+# কাস্টম সিএসএস: স্ট্রিমলিটের ডিফল্ট সাইডবার লুকিয়ে রাখা এবং মার্জিন ঠিক করা
 custom_layout_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -80,7 +80,9 @@ custom_layout_style = """
 """
 st.markdown(custom_layout_style, unsafe_allow_html=True)
 
-# ব্যানার
+# ==========================================
+# 🎯 ১. সবার উপরে মূল ব্যানার (এখন আর কাটা যাবে না)
+# ==========================================
 st.markdown("""
     <div style="text-align: center; padding: 12px; background: linear-gradient(135deg, #654ea3, #eaafc8); border-radius: 8px; margin-bottom: 15px; color: white;">
         <h2 style="margin: 0; font-size: 20px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h2>
@@ -153,7 +155,7 @@ if 'exam_in_progress' not in st.session_state:
     st.session_state['exam_in_progress'] = False
 
 # ==========================================
-# 🖥️ মূল লেআউট: বাম পাশ ও ডান পাশ ভাগ করা (Columns)
+# 🖥️ মূল লেআউট: ব্যানারের নিচে বাম পাশ ও ডান পাশ ভাগ করা
 # ==========================================
 left_col, right_col = st.columns([1, 3], gap="medium")
 
@@ -196,7 +198,7 @@ with left_col:
             st.info("⚠️ পরীক্ষা চলমান।")
             student_menu = "📝 পরীক্ষা দিন"
 
-        # শিক্ষক/অ্যাডমিন লগইনটি একদম নিচে খুব ছোট ও সাধারণ একটি ড্রপডাউনে লুকিয়ে রাখা হলো, যা সহজে চোখে পড়বে না
+        # শিক্ষক/অ্যাডমিন লগইনটি একদম নিচে খুব ছোট ও সাধারণ একটি ড্রপডাউনে লুকিয়ে রাখা হলো
         st.write("<br><br><br>", unsafe_allow_html=True)
         with st.expander("⚙️ সিস্টেম সেটিংস", expanded=False):
             with st.form("hidden_admin_login_form"):
