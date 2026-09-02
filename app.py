@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# প্রফেশনাল স্টাইলিং ও ফুটার ফিরিয়ে আনার জন্য CSS
+# প্রফেশনাল স্টাইলিং
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -26,15 +26,6 @@ hide_streamlit_style = """
         display: block !important;
         background-color: #f8f9fa;
         border-right: 1px solid #e0e0e0;
-    }
-
-    /* ফুটার দৃশ্যমান করা */
-    footer {
-        visibility: visible !important;
-        text-align: center;
-        color: #666;
-        font-size: 14px;
-        padding: 10px;
     }
 
     html, body, [class*="css"] {
@@ -175,12 +166,15 @@ with st.sidebar:
         current_mode = st.radio("অ্যাডমিন মেনু:", ["📝 প্রশ্ন আপলোড ও সেটআপ", "📊 সকল শিক্ষার্থীর ফলাফল"], key="sidebar_admin_menu")
 
 # ==========================================
-# মূল পেজের কনটেন্ট
+# মূল পেজের কনটেন্ট (উপরে হেডারের ঠিক নিচেই Powered by Job Efforts)
 # ==========================================
 st.markdown("""
-    <div style="text-align: center; padding: 18px; background: linear-gradient(135deg, #654ea3, #eaafc8); border-radius: 10px; margin-bottom: 20px; color: white;">
+    <div style="text-align: center; padding: 18px; background: linear-gradient(135deg, #654ea3, #eaafc8); border-radius: 10px; margin-bottom: 10px; color: white;">
         <h1 style="margin: 0; font-size: 24px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h1>
         <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.95;">বিসিএস, ব্যাংক, প্রাথমিক সহকারী শিক্ষক নিয়োগ এবং NTRCA সহ সকল চাকরির প্রস্তুতি</p>
+    </div>
+    <div style="text-align: center; font-size: 15px; font-weight: bold; color: #555; margin-bottom: 20px;">
+        Powered by <b>Job Efforts</b>
     </div>
 """, unsafe_allow_html=True)
 
@@ -692,13 +686,3 @@ else:
                         _grade_and_submit(user_answers, note_auto=False)
         else:
             st.warning("⚠️ বর্তমানে কোনো প্রশ্ন সেট করা নেই।")
-
-# ==========================================
-# Powered by Footer সংযোজন
-# ==========================================
-st.markdown("""
-    <hr style="margin-top: 40px; margin-bottom: 10px; border: none; border-top: 1px solid #e0e0e0;">
-    <div style="text-align: center; color: #777; font-size: 13px; margin-bottom: 20px;">
-        Powered by <b>Job Efforts</b>
-    </div>
-""", unsafe_allow_html=True)
