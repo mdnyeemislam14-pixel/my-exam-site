@@ -303,7 +303,7 @@ else:
                         
                         st.sidebar.write(f"🔍 ফাইল থেকে মোট প্রশ্ন পাওয়া গেছে: {len(sub_df)}টি")
                         
-                        # আপলোডের ৩টি বিশেষ অপشن
+                        # আপলোডের ৩টি বিশেষ অপশন
                         upload_sub_mode = st.sidebar.radio(
                             "আপলোড করার পদ্ধতি বেছে নিন:",
                             ["সব প্রশ্ন একসাথে (Bulk Import)", "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই", "একটি একটি করে দেখে সিলেক্ট করুন (Manual)"]
@@ -316,7 +316,6 @@ else:
                             
                         elif upload_sub_mode == "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই":
                             sample_size = st.sidebar.number_input("কতটি প্রশ্ন রেন্ডমলি নিতে চান?", min_value=1, max_value=len(sub_df), value=min(10, len(sub_df)))
-                            # অটোমেটিক রেন্ডম স্যাম্পলিং (সাইডবারে কোনো অতিরিক্ত টেবিল প্রিভিউ রাখা হয়নি)
                             questions_to_save = sub_df.sample(n=sample_size).reset_index(drop=True)
                             st.sidebar.success(f"✨ স্বয়ংক্রিয়ভাবে {sample_size}টি প্রশ্ন বাছাই করা হয়েছে!")
                             
@@ -367,7 +366,6 @@ else:
                     sub_q_df = q_check_df[q_check_df['Subject'] == sub].reset_index(drop=True)
                     count = len(sub_q_df)
                     with st.expander(f"📁 {sub} (প্রশ্ন: {count}টি)"):
-                        # টেবিলের বদলে আগের মতো সুন্দরভাবে প্রতিটি প্রশ্ন ও অপশন নিচে নিচে সাজিয়ে দেখানো হলো
                         for i, q_row in sub_q_df.iterrows():
                             st.markdown(f"""
                                 <div style="background-color: #fcfcfc; border: 1px solid #e0e0e0; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
@@ -410,19 +408,33 @@ else:
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    st.subheader("📊 বিস্তারিত উত্তরমালা")
+                    st.subheader("📊 বিস্তারিত উত্তরমালা (৪ অপশনসহ)")
                     st.write("---")
                     
                     for i, row in res_info['active_df'].iterrows():
                         ans = res_info['user_answers'].get(i)
-                        correct = str(row['Correct_Answer'])
+                        correct = str(row['Correct_Answer']).strip()
+                        
+                        opts = [str(row['Option_A']), str(row['Option_B']), str(row['Option_C']), str(row['Option_D'])]
+                        
+                        options_html = ""
+                        for opt in opts:
+                            opt_clean = opt.strip()
+                            is_correct = (opt_clean == correct)
+                            is_user_choice = (ans and ans.strip() == opt_clean)
+                            
+                            if is_correct:
+                                options_html += f"<div style='color: green; font-weight: bold; margin: 3px 0;'>✅ {opt} (সঠিক উত্তর)</div>"
+                            elif is_user_choice and not is_correct:
+                                options_html += f"<div style='color: red; font-weight: bold; margin: 3px 0;'>❌ {opt} (আপনার ভুল উত্তর)</div>"
+                            else:
+                                options_html += f"<div style='color: #555; margin: 3px 0;'>• {opt}</div>"
                         
                         st.markdown(f"""
                             <div class="question-card">
-                                <strong>প্রশ্ন {i+1}: {str(row['Question'])}</strong><br>
-                                <span style="color: {'green' if ans == correct else 'red'};">আপনার উত্তর: {ans if ans else 'দেওয়া হয়নি'}</span><br>
-                                <span style="color: green; font-weight: bold;">সঠিক উত্তর: {correct}</span><br>
-                                <hr style="margin: 5px 0;">
+                                <strong>প্রশ্ন {i+1}: {str(row['Question'])}</strong><br><br>
+                                {options_html}
+                                <hr style="margin: 8px 0;">
                                 <small>💡 ব্যাখ্যা: {row['Explanation']}</small>
                             </div>
                         """, unsafe_allow_html=True)
@@ -488,7 +500,7 @@ else:
                     
                     user_answers = {}
                     
-                    # প্রতিটি প্রশ্নকে একটি সুন্দর বক্স বা কার্ডের ভেতর সাজানো হলো
+                    # পরীক্ষার ভেতর থেকে অপ্রয়োজনীয় বাটন পুরোপুরি সরিয়ে শুধু প্রশ্ন ও অপশন রাখা হয়েছে
                     for i, row in active_df.iterrows():
                         options_list = [str(row['Option_A']), str(row['Option_B']), str(row['Option_C']), str(row['Option_D'])]
                         
