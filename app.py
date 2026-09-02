@@ -10,7 +10,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="wide")
 
-# ল্যাপটপ ও বড় স্ক্রিন কেন্দ্রিক প্রফেশনাল ডিজাইন এবং সাইডবার সিএসএস
+# ল্যাপটপ ও বড় স্ক্রিন কেন্দ্রিক প্রফেশনাল ডিজাইন এবং সাইডবার স্টাইল
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -18,19 +18,16 @@ hide_streamlit_style = """
     .stAppToolbar {visibility: hidden;}
     div[data-testid="stStatusWidget"] {visibility: hidden;}
 
-    /* ফন্ট সাইজ এবং লেআউট */
     html, body, [class*="css"] {
         font-size: 16px !important;
     }
 
-    /* মূল কন্টেইনার ল্যাপটপের জন্য প্রশস্ত ও সুন্দর করা */
     .block-container {
         max-width: 950px;
         padding-top: 1.5rem !important;
         margin: 0 auto;
     }
 
-    /* প্রশ্নগুলোর জন্য সুন্দর বক্স বা কার্ড স্টাইল */
     .question-card {
         background-color: #fcfcfc;
         border: 1px solid #e0e0e0;
@@ -40,7 +37,6 @@ hide_streamlit_style = """
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
 
-    /* ফলাফল প্রদর্শনের জন্য প্রিমিয়াম বক্স */
     .result-box {
         background: linear-gradient(135deg, #f6d365, #fda085);
         color: #2c3e50;
@@ -52,7 +48,6 @@ hide_streamlit_style = """
         margin-bottom: 20px;
     }
 
-    /* রেডিও অপশনগুলোর ডিজাইন */
     div[role="radiogroup"] label {
         padding: 10px 12px;
         border-radius: 6px;
@@ -83,7 +78,6 @@ QUESTIONS_FILE = "saved_questions.csv"
 CONFIG_FILE = "exam_configs.csv"
 ADMIN_PASSWORD = "1234"
 
-# সেশন ফোল্ডার তৈরি
 SESSIONS_DIR = "exam_sessions"
 os.makedirs(SESSIONS_DIR, exist_ok=True)
 
@@ -139,17 +133,36 @@ if 'exam_in_progress' not in st.session_state:
     st.session_state['exam_in_progress'] = False
 
 # ==========================================
-# 🧭 সাইডবার (ল্যাপটপের জন্য উপরের বাম পাশে ফিক্সড কন্ট্রোল ও অ্যাডমিন লগইন)
+# 🔐 সাইডবার: ল্যাপটপের বাম পাশে স্থির অ্যাডমিন লগইন ও নেভিগেশন
 # ==========================================
 with st.sidebar:
-    st.header("📌 মেনু ও কন্ট্রোল প্যানেল")
+    st.header("⚙️ কন্ট্রোল প্যানেল")
     st.write("---")
-    
-    admin_menu = None
-    is_admin = False
 
-    if st.session_state['is_admin_logged_in']:
+    # অ্যাডমিন লগইন সেকশন একদম উপরে রাখা হয়েছে
+    if not st.session_state['is_admin_logged_in']:
+        with st.expander("🔐 শিক্ষক / অ্যাডমিন লগইন", expanded=True):
+            entered_password = st.text_input("পাসওয়ার্ড দিন:", type="password", key="admin_pwd_box")
+            if st.button("লগইন করুন", key="login_submit_btn"):
+                if entered_password == ADMIN_PASSWORD:
+                    st.session_state['is_admin_logged_in'] = True
+                    st.rerun()
+                else:
+                    st.error("❌ ভুল পাসওয়ার্ড!")
+        st.write("---")
+
+    is_admin = st.session_state['is_admin_logged_in']
+    admin_menu = None
+    student_menu = "📝 পরীক্ষা দিন"
+
+    if is_admin:
         st.success("✅ অ্যাডমিন মোড সক্রিয়!")
+        admin_menu = st.radio("অ্যাডমিন অপশন:", [
+            "📝 প্রশ্ন আপলোড ও সেটআপ",
+            "📊 সকল শিক্ষার্থীর ফলাফল"
+        ], key="admin_radio_menu")
+        
+        st.write("---")
         if st.button("🚪 লগ আউট করুন", key="logout_btn"):
             st.session_state['is_admin_logged_in'] = False
             st.session_state['confirmed_student_name'] = ""
@@ -157,12 +170,6 @@ with st.sidebar:
             st.session_state['selected_exam_subject'] = ""
             st.session_state['exam_in_progress'] = False
             st.rerun()
-            
-        admin_menu = st.radio("অ্যাডমিন অপশন:", [
-            "📝 প্রশ্ন আপলোড ও সেটআপ",
-            "📊 সকল শিক্ষার্থীর ফলাফল"
-        ], key="admin_radio_menu")
-        is_admin = True
     else:
         if not st.session_state['exam_in_progress']:
             student_menu = st.radio(
@@ -174,20 +181,8 @@ with st.sidebar:
             st.info("⚠️ পরীক্ষা চলমান রয়েছে।")
             student_menu = "📝 পরীক্ষা দিন"
 
-        st.write("---")
-        with st.expander("🔐 শিক্ষক / অ্যাডমিন লগইন"):
-            with st.form("admin_login_form"):
-                entered_password = st.text_input("পাসওয়ার্ড দিন:", type="password", key="admin_pwd_box")
-                submitted = st.form_submit_button("লগইন করুন")
-                if submitted:
-                    if entered_password == ADMIN_PASSWORD:
-                        st.session_state['is_admin_logged_in'] = True
-                        st.rerun()
-                    else:
-                        st.error("❌ ভুল পাসওয়ার্ড!")
-
 # ==========================================
-# মূল কাজের অংশ (অ্যাডমিন বা শিক্ষার্থী ইন্টারফেস)
+# মূল পেজ ও লজিক হ্যান্ডলিং
 # ==========================================
 if is_admin and admin_menu == "📊 সকল শিক্ষার্থীর ফলাফল":
     st.subheader("🏆 সকল শিক্ষার্থীর ফলাফল তালিকা")
