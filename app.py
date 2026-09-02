@@ -278,13 +278,22 @@ else:
                 try:
                     raw_df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
                     
-                    # কলাম রেঞ্জ সিলেকশন অপশন
-                    predefined_columns = {"বাংলা": 0, "English": 6, "গণিত": 12, "বিজ্ঞান": 18, "বাংলাদেশ": 24, "আন্তর্জাতিক": 30, "ICT": 36}
-                    selected_col_range = st.sidebar.selectbox("কলাম রেঞ্জ সিলেক্ট করুন:", options=list(predefined_columns.keys()))
-                    start_idx = predefined_columns[selected_col_range]
+                    # আপনার দেওয়া মূল এক্সেল কলামের অক্ষরভিত্তিক সুনির্দিষ্ট রেঞ্জ ম্যাপিং (A-F, H-L ইত্যাদি)
+                    column_ranges = {
+                        "বাংলা (A-F)": (0, 6),
+                        "English (H-M)": (7, 13),
+                        "গণিত (O-T)": (14, 20),
+                        "বিজ্ঞান (V-AA)": (21, 27),
+                        "বাংলাদেশ (AC-AH)": (28, 34),
+                        "আন্তর্জাতিক (AJ-AO)": (35, 41),
+                        "ICT (AQ-AV)": (42, 48)
+                    }
                     
-                    if start_idx + 5 < len(raw_df.columns):
-                        sub_df = raw_df.iloc[:, start_idx:start_idx+6].copy()
+                    selected_range_name = st.sidebar.selectbox("কলাম রেঞ্জ সিলেক্ট করুন:", options=list(column_ranges.keys()))
+                    start_idx, end_idx = column_ranges[selected_range_name]
+                    
+                    if end_idx <= len(raw_df.columns):
+                        sub_df = raw_df.iloc[:, start_idx:end_idx].copy()
                         sub_df.columns = ['Question', 'Option_A', 'Option_B', 'Option_C', 'Option_D', 'Correct_Answer']
                         sub_df = sub_df.dropna(subset=['Question']).reset_index(drop=True)
                         if 'Explanation' not in sub_df.columns: 
@@ -292,7 +301,6 @@ else:
                         else:
                             sub_df['Explanation'] = sub_df['Explanation'].fillna('ব্যাখ্যা নেই।')
                         
-                        # প্রিভিউ দেখানোর জন্য
                         st.sidebar.write(f"🔍 সিলেক্টকৃত রেঞ্জের প্রথম ৩টি প্রশ্ন প্রিভিউ:")
                         st.sidebar.dataframe(sub_df.head(3))
                         
@@ -307,7 +315,6 @@ else:
                             
                             final_q_df.to_csv(QUESTIONS_FILE, index=False)
                             
-                            # কনফিগারেশন সেভ
                             config_df = pd.DataFrame([{"Subject": subject_name, "Duration": exam_duration}])
                             if os.path.exists(CONFIG_FILE):
                                 existing_conf = pd.read_csv(CONFIG_FILE)
