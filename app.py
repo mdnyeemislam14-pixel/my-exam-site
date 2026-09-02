@@ -8,7 +8,13 @@ import time
 from datetime import datetime
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="wide")
+# সাইডবার সবসময় ওপেন বা expanded থাকার জন্য initial_sidebar_state যোগ করা হয়েছে
+st.set_page_config(
+    page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", 
+    page_icon="📝", 
+    layout="wide", 
+    initial_sidebar_state="expanded"
+)
 
 # ল্যাপটপ ও বড় স্ক্রিন কেন্দ্রিক প্রফেশনাল ডিজাইন এবং সাইডবার স্টাইল
 hide_streamlit_style = """
@@ -133,7 +139,7 @@ if 'exam_in_progress' not in st.session_state:
     st.session_state['exam_in_progress'] = False
 
 # ==========================================
-# 🔐 সাইডবার: ল্যাপটপের বাম পাশে স্থির অ্যাডমিন লগইন ও নেভিগেশন
+# 🔐 সাইডবার: ল্যাপটপের বাম পাশে ফিক্সড অ্যাডমিন লগইন ও নেভিগেশন
 # ==========================================
 with st.sidebar:
     st.header("⚙️ কন্ট্রোল প্যানেল")
