@@ -36,7 +36,13 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-st.title("📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম")
+# 🌟 আপনার সেই সুন্দর কালারফুল ব্যানারটি আবার যুক্ত করা হলো
+st.markdown("""
+    <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #654ea3, #eaafc8); border-radius: 10px; margin-bottom: 20px; color: white;">
+        <h1 style="margin: 0; font-size: 28px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h1>
+        <h3 style="margin: 5px 0 0 0; font-size: 22px; letter-spacing: 1px;">✨ Powered by <span style="background-color: #ffcc00; color: #000; padding: 2px 10px; border-radius: 5px;">Job Efforts</span></h3>
+    </div>
+""", unsafe_allow_html=True)
 
 RESULT_FILE = "results.csv"
 QUESTIONS_FILE = "saved_questions.csv"
