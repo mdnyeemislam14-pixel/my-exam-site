@@ -301,9 +301,9 @@ else:
                         else:
                             sub_df['Explanation'] = sub_df['Explanation'].fillna('ব্যাখ্যা নেই।')
                         
-                        st.sidebar.write(f"🔍 সিলেক্টকৃত রেঞ্জের মোট প্রশ্ন পাওয়া গেছে: {len(sub_df)}টি")
+                        st.sidebar.write(f"🔍 ফাইল থেকে মোট প্রশ্ন পাওয়া গেছে: {len(sub_df)}টি")
                         
-                        # আপলোডের ৩টি বিশেষ অপশন
+                        # আপলোডের ৩টি বিশেষ অপشن
                         upload_sub_mode = st.sidebar.radio(
                             "আপলোড করার পদ্ধতি বেছে নিন:",
                             ["সব প্রশ্ন একসাথে (Bulk Import)", "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই", "একটি একটি করে দেখে সিলেক্ট করুন (Manual)"]
@@ -313,14 +313,12 @@ else:
                         
                         if upload_sub_mode == "সব প্রশ্ন একসাথে (Bulk Import)":
                             questions_to_save = sub_df
-                            st.sidebar.dataframe(sub_df.head(3))
                             
                         elif upload_sub_mode == "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই":
                             sample_size = st.sidebar.number_input("কতটি প্রশ্ন রেন্ডমলি নিতে চান?", min_value=1, max_value=len(sub_df), value=min(10, len(sub_df)))
-                            # অটোমেটিক রেন্ডম স্যাম্পলিং
+                            # অটোমেটিক রেন্ডম স্যাম্পলিং (সাইডবারে কোনো অতিরিক্ত টেবিল প্রিভিউ রাখা হয়নি)
                             questions_to_save = sub_df.sample(n=sample_size).reset_index(drop=True)
-                            st.sidebar.write(f"✨ স্বয়ংক্রিয়ভাবে {sample_size}টি প্রশ্ন বাছাই করা হয়েছে:")
-                            st.sidebar.dataframe(questions_to_save.head(3))
+                            st.sidebar.success(f"✨ স্বয়ংক্রিয়ভাবে {sample_size}টি প্রশ্ন বাছাই করা হয়েছে!")
                             
                         else: # একটি একটি করে দেখে সিলেক্ট করা
                             st.sidebar.markdown("---")
@@ -366,11 +364,21 @@ else:
             q_check_df = pd.read_csv(QUESTIONS_FILE)
             if not q_check_df.empty and 'Subject' in q_check_df.columns:
                 for sub in q_check_df['Subject'].unique().tolist():
-                    sub_q_df = q_check_df[q_check_df['Subject'] == sub]
+                    sub_q_df = q_check_df[q_check_df['Subject'] == sub].reset_index(drop=True)
                     count = len(sub_q_df)
                     with st.expander(f"📁 {sub} (প্রশ্ন: {count}টি)"):
-                        # ফোল্ডারের ভেতরে সংরক্ষিত প্রশ্নগুলো টেবিল আকারে দেখতে পাওয়ার ব্যবস্থা
-                        st.dataframe(sub_q_df[['Question', 'Option_A', 'Option_B', 'Option_C', 'Option_D', 'Correct_Answer']], use_container_width=True)
+                        # টেবিলের বদলে আগের মতো সুন্দরভাবে প্রতিটি প্রশ্ন ও অপশন নিচে নিচে সাজিয়ে দেখানো হলো
+                        for i, q_row in sub_q_df.iterrows():
+                            st.markdown(f"""
+                                <div style="background-color: #fcfcfc; border: 1px solid #e0e0e0; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
+                                    <strong>প্রশ্ন {i+1}: {q_row['Question']}</strong><br>
+                                    • {q_row['Option_A']}<br>
+                                    • {q_row['Option_B']}<br>
+                                    • {q_row['Option_C']}<br>
+                                    • {q_row['Option_D']}<br>
+                                    <span style="color: green; font-weight: bold;">সঠিক উত্তর: {q_row['Correct_Answer']}</span>
+                                </div>
+                            """, unsafe_allow_html=True)
                         
                         if st.button(f"❌ '{sub}' এর সব প্রশ্ন মুছুন", key=f"del_{sub}"):
                             q_check_df[q_check_df['Subject'] != sub].to_csv(QUESTIONS_FILE, index=False)
