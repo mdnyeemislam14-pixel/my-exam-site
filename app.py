@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="centered")
+st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="centered", initial_sidebar_state="expanded")
 
 # মোবাইলের জন্য ফন্ট সাইজ ছোট করা, সুন্দর বক্স বা কার্ড ডিজাইন এবং ফিক্সড টাইমার সিএসএস
 hide_streamlit_style = """
@@ -185,34 +185,44 @@ if 'exam_in_progress' not in st.session_state:
     st.session_state['exam_in_progress'] = False
 
 # ==========================================
-# 🔓 মূল পেজে দৃশ্যমান শিক্ষক / অ্যাডমিন লগইন প্যানেল
+# ⚙️ বাম পাশের সাইডবার (অ্যাডমিন প্যানেল ও লগইন)
 # ==========================================
-if not st.session_state['exam_in_progress']:
-    with st.expander("🔐 শিক্ষক / অ্যাডমিন প্যানেল লগইন (প্রশ্ন আপলোড ও ফলাফল দেখতে এখানে ক্লিক করুন)", expanded=st.session_state['is_admin_logged_in']):
-        if st.session_state['is_admin_logged_in']:
-            st.success("✅ আপনি অ্যাডমিন হিসেবে লগইন করা আছেন।")
-            if st.button("🚪 লগ আউট করুন", key="logout_main_btn"):
-                st.session_state['is_admin_logged_in'] = False
-                st.session_state['confirmed_student_name'] = ""
-                st.session_state['exam_submitted'] = False
-                st.session_state['selected_exam_subject'] = ""
-                st.session_state['exam_in_progress'] = False
-                st.rerun()
-        else:
-            with st.form("main_admin_login_form"):
-                entered_password = st.text_input("অ্যাডমিন পাসওয়ার্ড দিন:", type="password")
-                submit_login = st.form_submit_button("🔑 লগইন করুন")
+st.sidebar.header("⚙️ কন্ট্রোল প্যানেল")
+
+admin_menu = None
+
+if st.session_state['is_admin_logged_in']:
+    st.sidebar.success("✅ অ্যাডমিন মোড সক্রিয়!")
+    
+    if st.sidebar.button("🚪 লগ আউট করুন"):
+        st.session_state['is_admin_logged_in'] = False
+        st.session_state['confirmed_student_name'] = ""
+        st.session_state['exam_submitted'] = False
+        st.session_state['selected_exam_subject'] = ""
+        st.session_state['exam_in_progress'] = False
+        st.rerun()
+        
+    admin_menu = st.sidebar.radio("অ্যাডমিন মেনু:", [
+        "📝 প্রশ্ন আপলোড ও সেটআপ",
+        "📊 সকল শিক্ষার্থীর ফলাফল"
+    ])
+    is_admin = True
+else:
+    if not st.session_state['exam_in_progress']:
+        with st.sidebar.expander("🔐 শিক্ষক / অ্যাডমিন লগইন", expanded=True):
+            with st.form("sidebar_admin_login_form"):
+                entered_password = st.text_input("পাসওয়ার্ড দিন:", type="password")
+                submit_login = st.form_submit_button("🔑 লগইন")
                 if submit_login:
                     if entered_password == ADMIN_PASSWORD:
                         st.session_state['is_admin_logged_in'] = True
-                        st.success("সফলভাবে লগইন হয়েছে!")
+                        st.success("সফল!")
                         st.rerun()
                     else:
                         st.error("❌ ভুল পাসওয়ার্ড!")
+    is_admin = False
 
-st.write("---")
-
-# নেভিগেশন ট্যাব নির্ধারণ
+# নেভিগেশন ট্যাব নির্ধারণ (শিক্ষার্থীর জন্য মূল পেজে)
 if not st.session_state['is_admin_logged_in'] and not st.session_state['exam_in_progress']:
     mobile_nav = st.radio(
         "নেভিগেশন ট্যাব:",
@@ -221,22 +231,8 @@ if not st.session_state['is_admin_logged_in'] and not st.session_state['exam_in_
         label_visibility="collapsed"
     )
     student_menu = mobile_nav
-    is_admin = False
-elif st.session_state['exam_in_progress']:
-    student_menu = "📝 পরীক্ষা দিন"
-    is_admin = False
 else:
     student_menu = None
-    is_admin = True
-
-admin_menu = None
-
-if st.session_state['is_admin_logged_in']:
-    admin_menu = st.radio("অ্যাডমিন মেনু সিলেক্ট করুন:", [
-        "📝 প্রশ্ন আপলোড ও সেটআপ",
-        "📊 সকল শিক্ষার্থীর ফলাফল"
-    ], horizontal=True)
-    is_admin = True
 
 # ==========================================
 # 📊 ১. অ্যাডমিন: মেধা তালিকা ও রিপোর্ট সেক্টর
