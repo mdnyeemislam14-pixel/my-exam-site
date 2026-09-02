@@ -99,7 +99,7 @@ if 'selected_exam_subject' not in st.session_state:
 if 'exam_in_progress' not in st.session_state:
     st.session_state['exam_in_progress'] = False
 
-# মোবাইলে সহজে দেখার জন্য মূল পাতায় ট্যাব বা নেভিগেশন রাখা হলো (পরীক্ষা চলাকালীন এটি হাই থাকবে)
+# নেভিগেশন ট্যাব নির্ধারণ
 if not st.session_state['is_admin_logged_in'] and not st.session_state['exam_in_progress']:
     mobile_nav = st.radio(
         "নেভিগেশন ট্যাব:",
@@ -120,7 +120,7 @@ st.sidebar.header("⚙️ কন্ট্রোল প্যানেল")
 
 admin_menu = None
 
-# যদি অ্যাডমিন লগইন করা থাকে
+# অ্যাডমিন লগইন সেকশন
 if st.session_state['is_admin_logged_in']:
     st.sidebar.success("✅ অ্যাডমিন মোড সক্রিয়!")
     
@@ -420,34 +420,50 @@ else:
                     
                     for i, row in res_info['active_df'].iterrows():
                         ans = res_info['user_answers'].get(i)
-                        raw_correct = str(row['Correct_Answer']).strip().lower()
+                        raw_correct = str(row['Correct_Answer']).strip()
+                        raw_correct_lower = raw_correct.lower()
                         
                         opts = [str(row['Option_A']).strip(), str(row['Option_B']).strip(), str(row['Option_C']).strip(), str(row['Option_D']).strip()]
                         
-                        # সঠিক উত্তর নির্ধারণ করার নিখুঁত স্মার্ট লজিক
+                        # অত্যন্ত উন্নত ও নিখুঁত সঠিক উত্তর ম্যাচিং লজিক
                         correct_val = ""
                         for opt in opts:
                             opt_lower = opt.lower()
-                            if raw_correct in ['ক', 'a'] and (opt.startswith('ক') or opt_lower.startswith('a.')):
+                            if raw_correct_lower in ['ক', 'a'] and (opt.startswith('ক') or opt_lower.startswith('a.')):
                                 correct_val = opt
-                            elif raw_correct in ['খ', 'b'] and (opt.startswith('খ') or opt_lower.startswith('b.')):
+                            elif raw_correct_lower in ['খ', 'b'] and (opt.startswith('খ') or opt_lower.startswith('b.')):
                                 correct_val = opt
-                            elif raw_correct in ['গ', 'c'] and (opt.startswith('গ') or opt_lower.startswith('c.')):
+                            elif raw_correct_lower in ['গ', 'c'] and (opt.startswith('গ') or opt_lower.startswith('c.')):
                                 correct_val = opt
-                            elif raw_correct in ['ঘ', 'd'] and (opt.startswith('ঘ') or opt_lower.startswith('d.')):
+                            elif raw_correct_lower in ['ঘ', 'd'] and (opt.startswith('ঘ') or opt_lower.startswith('d.')):
                                 correct_val = opt
-                            elif raw_correct == opt_lower or raw_correct in opt_lower:
+                            elif raw_correct_lower == opt_lower or raw_correct_lower in opt_lower or opt_lower in raw_correct_lower:
                                 correct_val = opt
                         
                         if not correct_val:
-                            correct_val = str(row['Correct_Answer']).strip()
+                            correct_val = raw_correct
 
                         options_html = ""
                         for opt in opts:
-                            is_correct_option = (opt == correct_val or opt.lower() == correct_val.lower() or correct_val.lower() in opt.lower())
+                            opt_lower = opt.lower()
+                            c_val_lower = correct_val.lower()
+                            
+                            is_correct_option = (
+                                opt == correct_val or 
+                                opt_lower == c_val_lower or 
+                                c_val_lower in opt_lower or 
+                                opt_lower in c_val_lower or
+                                (raw_correct_lower in ['ক', 'a'] and (opt.startswith('ক') or opt_lower.startswith('a.'))) or
+                                (raw_correct_lower in ['খ', 'b'] and (opt.startswith('খ') or opt_lower.startswith('b.'))) or
+                                (raw_correct_lower in ['গ', 'c'] and (opt.startswith('গ') or opt_lower.startswith('c.'))) or
+                                (raw_correct_lower in ['ঘ', 'd'] and (opt.startswith('ঘ') or opt_lower.startswith('d.')))
+                            )
+                            
                             is_user_choice = (ans and str(ans).strip() == opt)
                             
-                            if is_correct_option:
+                            if is_correct_option and is_user_choice:
+                                options_html += f"<div style='color: green; font-weight: bold; margin: 4px 0;'>✅ {opt} (আপনার সঠিক উত্তর)</div>"
+                            elif is_correct_option:
                                 options_html += f"<div style='color: green; font-weight: bold; margin: 4px 0;'>✅ {opt} (সঠিক উত্তর)</div>"
                             elif is_user_choice and not is_correct_option:
                                 options_html += f"<div style='color: red; font-weight: bold; margin: 4px 0;'>❌ {opt} (আপনার ভুল উত্তর)</div>"
@@ -513,7 +529,7 @@ else:
                     remaining_seconds = max(0, total_seconds - elapsed_seconds)
                     mins, secs = remaining_seconds // 60, remaining_seconds % 60
                     
-                    # ফিক্সড টাইমার বক্স
+                    # ফিক্সড টাইমার বক্স (স্বয়ংক্রিয় রিফ্রেশ লুপ বাদ দেওয়া হয়েছে যাতে কোনো গ্লিচ বা জাম্প না করে)
                     st.markdown(f"""
                         <div class="fixed-timer">
                             ⏳ বাকি সময়: {mins:02d} মিনিট {secs:02d} সেকেন্ড
@@ -525,7 +541,6 @@ else:
                     
                     user_answers = {}
                     
-                    # পরীক্ষার ভেতর অতিরিক্ত বাটন বা লেখা সম্পূর্ণ মুছে ফেলা হয়েছে
                     for i, row in active_df.iterrows():
                         options_list = [str(row['Option_A']), str(row['Option_B']), str(row['Option_C']), str(row['Option_D'])]
                         
@@ -561,7 +576,7 @@ else:
                                 elif raw_c in ['খ', 'b'] and (o.startswith('খ') or o_low.startswith('b.')): correct_v = o
                                 elif raw_c in ['গ', 'c'] and (o.startswith('গ') or o_low.startswith('c.')): correct_v = o
                                 elif raw_c in ['ঘ', 'd'] and (o.startswith('ঘ') or o_low.startswith('d.')): correct_v = o
-                                elif raw_c == o_low or raw_c in o_low: correct_v = o
+                                elif raw_c == o_low or raw_c in o_low or o_low in raw_c: correct_v = o
 
                             if ans and (str(ans).strip() == correct_v or str(ans).strip().lower() == correct_v.lower()):
                                 score += 1
@@ -585,10 +600,6 @@ else:
                             "score": score, "total": len(active_df), "active_df": active_df, "user_answers": user_answers
                         }
                         st.balloons()
-                        st.rerun()
-                    
-                    if remaining_seconds > 0:
-                        time.sleep(1)
                         st.rerun()
         else:
             st.warning("⚠️ বর্তমানে কোনো প্রশ্ন সেট করা নেই।")
