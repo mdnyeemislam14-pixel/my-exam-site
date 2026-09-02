@@ -10,7 +10,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="centered", initial_sidebar_state="expanded")
 
-# কাস্টম সিএসএস এবং বাম পাশের ফিক্সড নীল তীর চিহ্নের জন্য স্টাইল
+# কাস্টম সিএসএস এবং ল্যাপটপের জন্য ফিক্সড লেফট সাইডবার ফোর্স স্ক্রিপ্ট
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -87,7 +87,7 @@ hide_streamlit_style = """
         }
     }
 
-    /* ট্যাবলেট ও তার উপরে */
+    /* ট্যাবলেট ও তার উপরে (ল্যাপটপ স্ক্রিন) */
     @media (min-width: 768px) {
         .block-container {
             padding-top: 1.5rem !important;
@@ -102,35 +102,22 @@ hide_streamlit_style = """
     }
     </style>
 
-    <!-- বাম পাশের সাইডবারের ভেতরে বা একদম ওপরের বাম কোণায় স্থায়ী নীল তীর চিহ্ন টগল বাটন -->
+    <!-- ল্যাপটপে সাইডবার স্থায়ীভাবে ওপেন রাখার শক্তিশালী স্ক্রিপ্ট -->
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-        if (!document.getElementById("fixed-left-sidebar-btn")) {
-            var btn = document.createElement("button");
-            btn.id = "fixed-left-sidebar-btn";
-            btn.innerHTML = "◀ / ▶ অ্যাডমিন প্যানেল";
-            btn.style.position = "fixed";
-            btn.style.top = "10px";
-            btn.style.left = "10px";
-            btn.style.zIndex = "999999";
-            btn.style.backgroundColor = "#0056b3";
-            btn.style.color = "white";
-            btn.style.border = "2px solid #ffffff";
-            btn.style.padding = "6px 12px";
-            btn.style.borderRadius = "6px";
-            btn.style.cursor = "pointer";
-            btn.style.fontWeight = "bold";
-            btn.style.boxShadow = "0 2px 5px rgba(0,0,0,0.3)";
-            btn.style.fontSize = "13px";
+        setTimeout(function() {
+            var sidebar = document.querySelector('[data-testid="stSidebar"]');
+            var collapseControl = document.querySelector('[data-testid="collapsedControl"] button');
             
-            btn.onclick = function() {
-                var sbToggle = document.querySelector('[data-testid="collapsedControl"] button') || document.querySelector('button[kind="header"]');
-                if (sbToggle) {
-                    sbToggle.click();
+            // যদি সাইডবার বন্ধ থাকে, তবে জাভাস্ক্রিপ্ট দিয়ে ক্লিক করে এটি ওপেন করে দেওয়া
+            if (collapseControl) {
+                // স্ট্রিমলিটের নিজস্ব স্টেট চেক করে ওপেন করা
+                var computedStyle = window.getComputedStyle(sidebar);
+                if (computedStyle.getPropertyValue("width") === "0px" || sidebar.getAttribute("aria-expanded") === "false") {
+                    collapseControl.click();
                 }
-            };
-            document.body.appendChild(btn);
-        }
+            }
+        }, 500);
     });
     </script>
 """
