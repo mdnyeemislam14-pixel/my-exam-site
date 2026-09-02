@@ -184,18 +184,7 @@ if 'selected_exam_subject' not in st.session_state:
 if 'exam_in_progress' not in st.session_state:
     st.session_state['exam_in_progress'] = False
 
-# মূল স্ক্রিনের উপরে সরাসরি অ্যাডমিন লগইন অপশন যুক্ত করা হলো যাতে সাইডবার খুঁজতে না হয়
-if not st.session_state['is_admin_logged_in'] and not st.session_state['exam_in_progress']:
-    with st.expander("🔐 শিক্ষক / অ্যাডমিন প্যানেল লগইন"):
-        entered_password = st.text_input("অ্যাডমিন পাসওয়ার্ড দিন:", type="password", key="main_admin_pwd")
-        if st.button("🔑 লগইন করুন"):
-            if entered_password == ADMIN_PASSWORD:
-                st.session_state['is_admin_logged_in'] = True
-                st.rerun()
-            else:
-                st.error("❌ ভুল পাসওয়ার্ড!")
-
-# নেভিগেশন ট্যাব নির্ধারণ
+# নেভিগেশন ট্যাব নির্ধারণ (শিক্ষার্থীর জন্য মূল পেজে)
 if not st.session_state['is_admin_logged_in'] and not st.session_state['exam_in_progress']:
     mobile_nav = st.radio(
         "নেভিগেশন ট্যাব:",
@@ -212,13 +201,15 @@ else:
     student_menu = None
     is_admin = True
 
+# ⚙️ কন্ট্রোল প্যানেল ও অ্যাডমিন লগইন বাম পাশের সাইডবারে
+st.sidebar.header("⚙️ কন্ট্রোল প্যানেল")
+
 admin_menu = None
 
-# অ্যাডমিন লগইন সফল হলে কন্ট্রোল প্যানেল দেখাবে
 if st.session_state['is_admin_logged_in']:
-    st.success("✅ অ্যাডমিন মোড সক্রিয়!")
+    st.sidebar.success("✅ অ্যাডমিন মোড সক্রিয়!")
     
-    if st.button("🚪 লগ আউট করুন"):
+    if st.sidebar.button("🚪 লগ আউট করুন"):
         st.session_state['is_admin_logged_in'] = False
         st.session_state['confirmed_student_name'] = ""
         st.session_state['exam_submitted'] = False
@@ -226,11 +217,24 @@ if st.session_state['is_admin_logged_in']:
         st.session_state['exam_in_progress'] = False
         st.rerun()
         
-    admin_menu = st.radio("অ্যাডমিন মেনু সিলেক্ট করুন:", [
+    admin_menu = st.sidebar.radio("অ্যাডমিন মেনু:", [
         "📝 প্রশ্ন আপলোড ও সেটআপ",
         "📊 সকল শিক্ষার্থীর ফলাফল"
     ])
     is_admin = True
+else:
+    if not st.session_state['exam_in_progress']:
+        with st.sidebar.expander("🔐 শিক্ষক/অ্যাডমিন লগইন"):
+            with st.form("sidebar_admin_login_form"):
+                entered_password = st.text_input("পাসওয়ার্ড দিন:", type="password")
+                submit_login = st.form_submit_button("🔑 লগইন")
+                if submit_login:
+                    if entered_password == ADMIN_PASSWORD:
+                        st.session_state['is_admin_logged_in'] = True
+                        st.success("সফল!")
+                        st.rerun()
+                    else:
+                        st.error("❌ ভুল পাসওয়ার্ড!")
 
 # ==========================================
 # 📊 ১. অ্যাডমিন: মেধা তালিকা ও রিপোর্ট সেক্টর
