@@ -10,7 +10,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="centered", initial_sidebar_state="expanded")
 
-# মোবাইলের জন্য ফন্ট সাইজ ছোট করা, সুন্দর বক্স বা কার্ড ডিজাইন এবং ফিক্সড টাইমার সিএসএস
+# কাস্টম সিএসএস এবং বাম পাশের ফিক্সড নীল তীর চিহ্নের জন্য স্টাইল
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -56,7 +56,7 @@ hide_streamlit_style = """
         margin-bottom: 20px;
     }
 
-    /* টাচ-স্ক্রিন ডিভাইসে রেডিও অপশনগুলো বড় ও সহজে চাপার উপযোগী করা */
+    /* টাচ-স্ক্রিন ডিভাইসে রেডিও অপশনগুলো বড় করা */
     div[role="radiogroup"] label {
         padding: 10px 8px;
         border-radius: 6px;
@@ -69,7 +69,7 @@ hide_streamlit_style = """
         background-color: #f0f0f0;
     }
 
-    /* বাটনগুলো সব ডিভাইসে পূর্ণ-প্রস্থ ও টাচ-ফ্রেন্ডলি উচ্চতার */
+    /* বাটন স্টাইল */
     .stButton > button {
         min-height: 44px;
         width: 100%;
@@ -101,6 +101,38 @@ hide_streamlit_style = """
         }
     }
     </style>
+
+    <!-- বাম পাশের সাইডবারের ভেতরে বা একদম ওপরের বাম কোণায় স্থায়ী নীল তীর চিহ্ন টগল বাটন -->
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        if (!document.getElementById("fixed-left-sidebar-btn")) {
+            var btn = document.createElement("button");
+            btn.id = "fixed-left-sidebar-btn";
+            btn.innerHTML = "◀ / ▶ অ্যাডমিন প্যানেল";
+            btn.style.position = "fixed";
+            btn.style.top = "10px";
+            btn.style.left = "10px";
+            btn.style.zIndex = "999999";
+            btn.style.backgroundColor = "#0056b3";
+            btn.style.color = "white";
+            btn.style.border = "2px solid #ffffff";
+            btn.style.padding = "6px 12px";
+            btn.style.borderRadius = "6px";
+            btn.style.cursor = "pointer";
+            btn.style.fontWeight = "bold";
+            btn.style.boxShadow = "0 2px 5px rgba(0,0,0,0.3)";
+            btn.style.fontSize = "13px";
+            
+            btn.onclick = function() {
+                var sbToggle = document.querySelector('[data-testid="collapsedControl"] button') || document.querySelector('button[kind="header"]');
+                if (sbToggle) {
+                    sbToggle.click();
+                }
+            };
+            document.body.appendChild(btn);
+        }
+    });
+    </script>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
