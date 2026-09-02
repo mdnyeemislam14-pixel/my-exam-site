@@ -277,15 +277,24 @@ else:
             if uploaded_file is not None:
                 try:
                     raw_df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+                    
+                    # কলাম রেঞ্জ সিলেকশন অপশন
                     predefined_columns = {"বাংলা": 0, "English": 6, "গণিত": 12, "বিজ্ঞান": 18, "বাংলাদেশ": 24, "আন্তর্জাতিক": 30, "ICT": 36}
-                    selected_col_range = st.sidebar.selectbox("কলাম রেঞ্জ:", options=list(predefined_columns.keys()))
+                    selected_col_range = st.sidebar.selectbox("কলাম রেঞ্জ সিলেক্ট করুন:", options=list(predefined_columns.keys()))
                     start_idx = predefined_columns[selected_col_range]
                     
                     if start_idx + 5 < len(raw_df.columns):
                         sub_df = raw_df.iloc[:, start_idx:start_idx+6].copy()
                         sub_df.columns = ['Question', 'Option_A', 'Option_B', 'Option_C', 'Option_D', 'Correct_Answer']
                         sub_df = sub_df.dropna(subset=['Question']).reset_index(drop=True)
-                        if 'Explanation' not in sub_df.columns: sub_df['Explanation'] = 'ব্যাখ্যা নেই।'
+                        if 'Explanation' not in sub_df.columns: 
+                            sub_df['Explanation'] = 'ব্যাখ্যা নেই।'
+                        else:
+                            sub_df['Explanation'] = sub_df['Explanation'].fillna('ব্যাখ্যা নেই।')
+                        
+                        # প্রিভিউ দেখানোর জন্য
+                        st.sidebar.write(f"🔍 সিলেক্টকৃত রেঞ্জের প্রথম ৩টি প্রশ্ন প্রিভিউ:")
+                        st.sidebar.dataframe(sub_df.head(3))
                         
                         if st.sidebar.button("📌 ফাইল থেকে সেভ করুন"):
                             sub_df['Subject'] = subject_name
@@ -295,8 +304,22 @@ else:
                                 final_q_df = pd.concat([existing_q_df, sub_df], ignore_index=True)
                             else:
                                 final_q_df = sub_df
+                            
                             final_q_df.to_csv(QUESTIONS_FILE, index=False)
+                            
+                            # কনফিগারেশন সেভ
+                            config_df = pd.DataFrame([{"Subject": subject_name, "Duration": exam_duration}])
+                            if os.path.exists(CONFIG_FILE):
+                                existing_conf = pd.read_csv(CONFIG_FILE)
+                                existing_conf = existing_conf[existing_conf['Subject'] != subject_name]
+                                final_conf = pd.concat([existing_conf, config_df], ignore_index=True)
+                            else:
+                                final_conf = config_df
+                            final_conf.to_csv(CONFIG_FILE, index=False)
+                            
                             st.sidebar.success("✅ ফাইল থেকে সফলভাবে সেভ হয়েছে!")
+                    else:
+                        st.sidebar.error("⚠️ আপনার ফাইলের কলাম সংখ্যা নির্ধারিত রেঞ্জের চেয়ে কম। সঠিক ফাইল বা কলাম রেঞ্জ নির্বাচন করুন।")
                 except Exception as e:
                     st.sidebar.error(f"ত্রুটি: {e}")
 
