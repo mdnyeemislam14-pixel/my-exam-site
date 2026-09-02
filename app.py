@@ -278,7 +278,7 @@ else:
                 try:
                     raw_df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
                     
-                    # আপনার সুনির্দিষ্ট কলাম ম্যাপিং (A-F বাংলা, G-L English ইত্যাদি)
+                    # আপনার সুনির্দিষ্ট সঠিক কলাম ম্যাপিং (A-F বাংলা, G-L English ইত্যাদি)
                     column_ranges = {
                         "বাংলা (A-F)": (0, 6),
                         "English (G-L)": (6, 12),
@@ -301,30 +301,58 @@ else:
                         else:
                             sub_df['Explanation'] = sub_df['Explanation'].fillna('ব্যাখ্যা নেই।')
                         
-                        st.sidebar.write(f"🔍 সিলেক্টকৃত রেঞ্জের প্রথম ৩টি প্রশ্ন প্রিভিউ:")
-                        st.sidebar.dataframe(sub_df.head(3))
+                        st.sidebar.write(f"🔍 সিলেক্টকৃত রেঞ্জের মোট প্রশ্ন পাওয়া গেছে: {len(sub_df)}টি")
                         
+                        # ফাইল আপলোডের সেই ৩টি বিশেষ সিলেকশন অপশন
+                        upload_sub_mode = st.sidebar.radio(
+                            "আপলোড করার পদ্ধতি বেছে নিন:",
+                            ["সব প্রশ্ন একসাথে (Bulk Import)", "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই", "একটি একটি করে দেখে সিলেক্ট করুন (Manual)"]
+                        )
+                        
+                        questions_to_save = pd.DataFrame()
+                        
+                        if upload_sub_mode == "সব প্রশ্ন একসাথে (Bulk Import)":
+                            questions_to_save = sub_df
+                            st.sidebar.dataframe(sub_df.head(3))
+                            
+                        elif upload_sub_mode == "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই":
+                            sample_size = st.sidebar.number_input("কতটি প্রশ্ন রেন্ডমলি নিতে চান?", min_value=1, max_value=len(sub_df), value=min(10, len(sub_df)))
+                            questions_to_save = sub_df.sample(n=sample_size).reset_index(drop=True)
+                            st.sidebar.dataframe(questions_to_save.head(3))
+                            
+                        else: # একটি একটি করে দেখে সিলেক্ট করা
+                            st.sidebar.markdown("---")
+                            st.markdown("### 🔍 ম্যানুয়াল প্রশ্ন সিলেকশন প্রিভিউ")
+                            selected_indices = []
+                            for idx, row in sub_df.iterrows():
+                                if st.checkbox(f"প্রশ্ন {idx+1}: {str(row['Question'])[:50]}...", value=True, key=f"chk_q_{idx}"):
+                                    selected_indices.append(idx)
+                            questions_to_save = sub_df.loc[selected_indices].reset_index(drop=True)
+
                         if st.sidebar.button("📌 ফাইল থেকে সেভ করুন"):
-                            sub_df['Subject'] = subject_name
-                            if os.path.exists(QUESTIONS_FILE):
-                                existing_q_df = pd.read_csv(QUESTIONS_FILE)
-                                existing_q_df = existing_q_df[existing_q_df['Subject'] != subject_name]
-                                final_q_df = pd.concat([existing_q_df, sub_df], ignore_index=True)
+                            if not questions_to_save.empty:
+                                questions_to_save['Subject'] = subject_name
+                                if os.path.exists(QUESTIONS_FILE):
+                                    existing_q_df = pd.read_csv(QUESTIONS_FILE)
+                                    existing_q_df = existing_q_df[existing_q_df['Subject'] != subject_name]
+                                    final_q_df = pd.concat([existing_q_df, questions_to_save], ignore_index=True)
+                                else:
+                                    final_q_df = questions_to_save
+                                
+                                final_q_df.to_csv(QUESTIONS_FILE, index=False)
+                                
+                                config_df = pd.DataFrame([{"Subject": subject_name, "Duration": exam_duration}])
+                                if os.path.exists(CONFIG_FILE):
+                                    existing_conf = pd.read_csv(CONFIG_FILE)
+                                    existing_conf = existing_conf[existing_conf['Subject'] != subject_name]
+                                    final_conf = pd.concat([existing_conf, config_df], ignore_index=True)
+                                else:
+                                    final_conf = config_df
+                                final_conf.to_csv(CONFIG_FILE, index=False)
+                                
+                                st.sidebar.success("✅ ফাইল থেকে সফলভাবে সেভ হয়েছে!")
                             else:
-                                final_q_df = sub_df
-                            
-                            final_q_df.to_csv(QUESTIONS_FILE, index=False)
-                            
-                            config_df = pd.DataFrame([{"Subject": subject_name, "Duration": exam_duration}])
-                            if os.path.exists(CONFIG_FILE):
-                                existing_conf = pd.read_csv(CONFIG_FILE)
-                                existing_conf = existing_conf[existing_conf['Subject'] != subject_name]
-                                final_conf = pd.concat([existing_conf, config_df], ignore_index=True)
-                            else:
-                                final_conf = config_df
-                            final_conf.to_csv(CONFIG_FILE, index=False)
-                            
-                            st.sidebar.success("✅ ফাইল থেকে সফলভাবে সেভ হয়েছে!")
+                                st.sidebar.error("⚠️ কোনো প্রশ্ন সিলেক্ট করা হয়নি।")
                     else:
                         st.sidebar.error("⚠️ আপনার ফাইলের কলাম সংখ্যা নির্ধারিত রেঞ্জের চেয়ে কম। সঠিক ফাইল বা কলাম রেঞ্জ নির্বাচন করুন।")
                 except Exception as e:
