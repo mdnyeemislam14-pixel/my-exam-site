@@ -278,7 +278,6 @@ else:
                 try:
                     raw_df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
                     
-                    # সুনির্দিষ্ট সঠিক কলাম রেঞ্জ (A-F বাংলা, G-L English ইত্যাদি)
                     column_ranges = {
                         "বাংলা (A-F)": (0, 6),
                         "English (G-L)": (6, 12),
@@ -303,7 +302,6 @@ else:
                         
                         st.sidebar.write(f"🔍 ফাইল থেকে মোট প্রশ্ন পাওয়া গেছে: {len(sub_df)}টি")
                         
-                        # আপলোডের ৩টি বিশেষ অপশন
                         upload_sub_mode = st.sidebar.radio(
                             "আপলোড করার পদ্ধতি বেছে নিন:",
                             ["সব প্রশ্ন একসাথে (Bulk Import)", "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই", "একটি একটি করে দেখে সিলেক্ট করুন (Manual)"]
@@ -319,7 +317,7 @@ else:
                             questions_to_save = sub_df.sample(n=sample_size).reset_index(drop=True)
                             st.sidebar.success(f"✨ স্বয়ংক্রিয়ভাবে {sample_size}টি প্রশ্ন বাছাই করা হয়েছে!")
                             
-                        else: # একটি একটি করে দেখে সিলেক্ট করা
+                        else:
                             st.sidebar.markdown("---")
                             st.markdown("### 🔍 ম্যানুয়াল প্রশ্ন সিলেকশন প্রিভিউ")
                             selected_indices = []
@@ -408,27 +406,44 @@ else:
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    st.subheader("📊 বিস্তারিত উত্তরমালা (৪ অপশনসহ)")
+                    st.subheader("📊 বিস্তারিত উত্তরমালা (৪ অপশনসহ সঠিক ও ভুল মার্কিং)")
                     st.write("---")
                     
                     for i, row in res_info['active_df'].iterrows():
                         ans = res_info['user_answers'].get(i)
-                        correct = str(row['Correct_Answer']).strip()
+                        raw_correct = str(row['Correct_Answer']).strip().lower()
                         
-                        opts = [str(row['Option_A']), str(row['Option_B']), str(row['Option_C']), str(row['Option_D'])]
+                        opts = [str(row['Option_A']).strip(), str(row['Option_B']).strip(), str(row['Option_C']).strip(), str(row['Option_D']).strip()]
                         
+                        # সঠিক উত্তর নির্ধারণ করার নিখুঁত লজিক (বর্ণ বা পূর্ণাঙ্গ টেক্সট যেকোনো ফরম্যাট হ্যান্ডেল করবে)
+                        correct_val = ""
+                        for opt in opts:
+                            opt_lower = opt.lower()
+                            if raw_correct in ['ক', 'a'] and (opt.startswith('ক') or opt_lower.startswith('a.')):
+                                correct_val = opt
+                            elif raw_correct in ['খ', 'b'] and (opt.startswith('খ') or opt_lower.startswith('b.')):
+                                correct_val = opt
+                            elif raw_correct in ['গ', 'c'] and (opt.startswith('গ') or opt_lower.startswith('c.')):
+                                correct_val = opt
+                            elif raw_correct in ['ঘ', 'd'] and (opt.startswith('ঘ') or opt_lower.startswith('d.')):
+                                correct_val = opt
+                            elif raw_correct == opt_lower or raw_correct in opt_lower:
+                                correct_val = opt
+                        
+                        if not correct_val:
+                            correct_val = str(row['Correct_Answer']).strip()
+
                         options_html = ""
                         for opt in opts:
-                            opt_clean = opt.strip()
-                            is_correct = (opt_clean == correct)
-                            is_user_choice = (ans and ans.strip() == opt_clean)
+                            is_correct_option = (opt == correct_val or opt.lower() == correct_val.lower() or correct_val.lower() in opt.lower())
+                            is_user_choice = (ans and str(ans).strip() == opt)
                             
-                            if is_correct:
-                                options_html += f"<div style='color: green; font-weight: bold; margin: 3px 0;'>✅ {opt} (সঠিক উত্তর)</div>"
-                            elif is_user_choice and not is_correct:
-                                options_html += f"<div style='color: red; font-weight: bold; margin: 3px 0;'>❌ {opt} (আপনার ভুল উত্তর)</div>"
+                            if is_correct_option:
+                                options_html += f"<div style='color: green; font-weight: bold; margin: 4px 0;'>✅ {opt} (সঠিক উত্তর)</div>"
+                            elif is_user_choice and not is_correct_option:
+                                options_html += f"<div style='color: red; font-weight: bold; margin: 4px 0;'>❌ {opt} (আপনার ভুল উত্তর)</div>"
                             else:
-                                options_html += f"<div style='color: #555; margin: 3px 0;'>• {opt}</div>"
+                                options_html += f"<div style='color: #555; margin: 4px 0;'>• {opt}</div>"
                         
                         st.markdown(f"""
                             <div class="question-card">
@@ -500,7 +515,7 @@ else:
                     
                     user_answers = {}
                     
-                    # পরীক্ষার ভেতর থেকে অপ্রয়োজনীয় বাটন পুরোপুরি সরিয়ে শুধু প্রশ্ন ও অপশন রাখা হয়েছে
+                    # পরীক্ষার ভেতর অতিরিক্ত বাটন বা লেখা সম্পূর্ণ মুছে ফেলা হয়েছে
                     for i, row in active_df.iterrows():
                         options_list = [str(row['Option_A']), str(row['Option_B']), str(row['Option_C']), str(row['Option_D'])]
                         
@@ -523,7 +538,22 @@ else:
                         score = 0
                         for i, row in active_df.iterrows():
                             ans = user_answers.get(i)
-                            if ans and ans.strip() == str(row['Correct_Answer']).strip():
+                            raw_c = str(row['Correct_Answer']).strip().lower()
+                            opt_a_str = str(row['Option_A']).strip()
+                            opt_b_str = str(row['Option_B']).strip()
+                            opt_c_str = str(row['Option_C']).strip()
+                            opt_d_str = str(row['Option_D']).strip()
+                            
+                            correct_v = opt_a_str
+                            for o in [opt_a_str, opt_b_str, opt_c_str, opt_d_str]:
+                                o_low = o.lower()
+                                if raw_c in ['ক', 'a'] and (o.startswith('ক') or o_low.startswith('a.')): correct_v = o
+                                elif raw_c in ['খ', 'b'] and (o.startswith('খ') or o_low.startswith('b.')): correct_v = o
+                                elif raw_c in ['গ', 'c'] and (o.startswith('গ') or o_low.startswith('c.')): correct_v = o
+                                elif raw_c in ['ঘ', 'd'] and (o.startswith('ঘ') or o_low.startswith('d.')): correct_v = o
+                                elif raw_c == o_low or raw_c in o_low: correct_v = o
+
+                            if ans and (str(ans).strip() == correct_v or str(ans).strip().lower() == correct_v.lower()):
                                 score += 1
 
                         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
