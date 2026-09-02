@@ -278,15 +278,15 @@ else:
                 try:
                     raw_df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
                     
-                    # আপনার দেওয়া মূল এক্সেল কলামের অক্ষরভিত্তিক সুনির্দিষ্ট রেঞ্জ ম্যাপিং (A-F, H-L ইত্যাদি)
+                    # আপনার সুনির্দিষ্ট কলাম ম্যাপিং (A-F বাংলা, G-L English ইত্যাদি)
                     column_ranges = {
                         "বাংলা (A-F)": (0, 6),
-                        "English (H-M)": (7, 13),
-                        "গণিত (O-T)": (14, 20),
-                        "বিজ্ঞান (V-AA)": (21, 27),
-                        "বাংলাদেশ (AC-AH)": (28, 34),
-                        "আন্তর্জাতিক (AJ-AO)": (35, 41),
-                        "ICT (AQ-AV)": (42, 48)
+                        "English (G-L)": (6, 12),
+                        "গণিত (M-R)": (12, 18),
+                        "বিজ্ঞান (S-X)": (18, 24),
+                        "বাংলাদেশ (Y-AD)": (24, 30),
+                        "আন্তর্জাতিক (AE-AJ)": (30, 36),
+                        "ICT (AK-AP)": (36, 42)
                     }
                     
                     selected_range_name = st.sidebar.selectbox("কলাম রেঞ্জ সিলেক্ট করুন:", options=list(column_ranges.keys()))
