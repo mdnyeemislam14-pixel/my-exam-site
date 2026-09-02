@@ -278,7 +278,7 @@ else:
                 try:
                     raw_df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
                     
-                    # আপনার সুনির্দিষ্ট সঠিক কলাম ম্যাপিং (A-F বাংলা, G-L English ইত্যাদি)
+                    # সুনির্দিষ্ট সঠিক কলাম রেঞ্জ (A-F বাংলা, G-L English ইত্যাদি)
                     column_ranges = {
                         "বাংলা (A-F)": (0, 6),
                         "English (G-L)": (6, 12),
@@ -303,7 +303,7 @@ else:
                         
                         st.sidebar.write(f"🔍 সিলেক্টকৃত রেঞ্জের মোট প্রশ্ন পাওয়া গেছে: {len(sub_df)}টি")
                         
-                        # ফাইল আপলোডের সেই ৩টি বিশেষ সিলেকশন অপশন
+                        # আপলোডের ৩টি বিশেষ অপশন
                         upload_sub_mode = st.sidebar.radio(
                             "আপলোড করার পদ্ধতি বেছে নিন:",
                             ["সব প্রশ্ন একসাথে (Bulk Import)", "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই", "একটি একটি করে দেখে সিলেক্ট করুন (Manual)"]
@@ -317,7 +317,9 @@ else:
                             
                         elif upload_sub_mode == "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই":
                             sample_size = st.sidebar.number_input("কতটি প্রশ্ন রেন্ডমলি নিতে চান?", min_value=1, max_value=len(sub_df), value=min(10, len(sub_df)))
+                            # অটোমেটিক রেন্ডম স্যাম্পলিং
                             questions_to_save = sub_df.sample(n=sample_size).reset_index(drop=True)
+                            st.sidebar.write(f"✨ স্বয়ংক্রিয়ভাবে {sample_size}টি প্রশ্ন বাছাই করা হয়েছে:")
                             st.sidebar.dataframe(questions_to_save.head(3))
                             
                         else: # একটি একটি করে দেখে সিলেক্ট করা
@@ -359,14 +361,18 @@ else:
                     st.sidebar.error(f"ত্রুটি: {e}")
 
         st.write("---")
-        st.subheader("📂 সংরক্ষিত বিষয়সমূহ")
+        st.subheader("📂 সংরক্ষিত বিষয়সমূহ (প্রশ্ন প্রিভিউ সহ)")
         if os.path.exists(QUESTIONS_FILE):
             q_check_df = pd.read_csv(QUESTIONS_FILE)
             if not q_check_df.empty and 'Subject' in q_check_df.columns:
                 for sub in q_check_df['Subject'].unique().tolist():
-                    count = len(q_check_df[q_check_df['Subject'] == sub])
+                    sub_q_df = q_check_df[q_check_df['Subject'] == sub]
+                    count = len(sub_q_df)
                     with st.expander(f"📁 {sub} (প্রশ্ন: {count}টি)"):
-                        if st.button(f"❌ '{sub}' মুছুন", key=f"del_{sub}"):
+                        # ফোল্ডারের ভেতরে সংরক্ষিত প্রশ্নগুলো টেবিল আকারে দেখতে পাওয়ার ব্যবস্থা
+                        st.dataframe(sub_q_df[['Question', 'Option_A', 'Option_B', 'Option_C', 'Option_D', 'Correct_Answer']], use_container_width=True)
+                        
+                        if st.button(f"❌ '{sub}' এর সব প্রশ্ন মুছুন", key=f"del_{sub}"):
                             q_check_df[q_check_df['Subject'] != sub].to_csv(QUESTIONS_FILE, index=False)
                             st.rerun()
 
