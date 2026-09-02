@@ -8,29 +8,29 @@ import time
 from datetime import datetime
 import streamlit.components.v1 as components
 
-# সাইডবার সবসময় ওপেন বা expanded থাকার জন্য initial_sidebar_state যোগ করা হয়েছে
 st.set_page_config(
     page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", 
     page_icon="📝", 
     layout="wide", 
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# ল্যাপটপ ও বড় স্ক্রিন কেন্দ্রিক প্রফেশনাল ডিজাইন এবং সাইডবার স্টাইল
+# প্রফেশনাল স্টাইলিং
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     .stAppToolbar {visibility: hidden;}
     div[data-testid="stStatusWidget"] {visibility: hidden;}
+    [data-testid="stSidebar"] {display: none;} /* সাইডবার পুরোপুরি লুকিয়ে দেওয়া হলো যাতে কোনো কনফিউশন না থাকে */
 
     html, body, [class*="css"] {
         font-size: 16px !important;
     }
 
     .block-container {
-        max-width: 950px;
-        padding-top: 1.5rem !important;
+        max-width: 900px;
+        padding-top: 1rem !important;
         margin: 0 auto;
     }
 
@@ -72,10 +72,9 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # ব্যানার
 st.markdown("""
-    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #654ea3, #eaafc8); border-radius: 10px; margin-bottom: 20px; color: white;">
-        <h1 style="margin: 0; font-size: 26px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h1>
-        <p style="margin: 5px 0 5px 0; font-size: 15px; opacity: 0.95;">বিসিএস, ব্যাংক, প্রাথমিক সহকারী শিক্ষক নিয়োগ এবং NTRCA সহ সকল চাকরির প্রস্তুতির বিশ্বস্ত মাধ্যম</p>
-        <h4 style="margin: 0; font-size: 14px; letter-spacing: 1px;">✨ Powered by <span style="background-color: #ffcc00; color: #000; padding: 2px 8px; border-radius: 4px;">Job Efforts</span></h4>
+    <div style="text-align: center; padding: 18px; background: linear-gradient(135deg, #654ea3, #eaafc8); border-radius: 10px; margin-bottom: 15px; color: white;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h1>
+        <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.95;">বিসিএস, ব্যাংক, প্রাথমিক সহকারী শিক্ষক নিয়োগ এবং NTRCA সহ সকল চাকরির প্রস্তুতি</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -139,37 +138,23 @@ if 'exam_in_progress' not in st.session_state:
     st.session_state['exam_in_progress'] = False
 
 # ==========================================
-# 🔐 সাইডবার: ল্যাপটপের বাম পাশে ফিক্সড অ্যাডমিন লগইন ও নেভিগেশন
+# ⚙️ মূল স্ক্রিনের কন্ট্রোল ও মোড সিলেকশন বার
 # ==========================================
-with st.sidebar:
-    st.header("⚙️ কন্ট্রোল প্যানেল")
-    st.write("---")
+col_top1, col_top2 = st.columns([3, 1])
 
-    # অ্যাডমিন লগইন সেকশন একদম উপরে রাখা হয়েছে
-    if not st.session_state['is_admin_logged_in']:
-        with st.expander("🔐 শিক্ষক / অ্যাডমিন লগইন", expanded=True):
-            entered_password = st.text_input("পাসওয়ার্ড দিন:", type="password", key="admin_pwd_box")
-            if st.button("লগইন করুন", key="login_submit_btn"):
-                if entered_password == ADMIN_PASSWORD:
-                    st.session_state['is_admin_logged_in'] = True
-                    st.rerun()
-                else:
-                    st.error("❌ ভুল পাসওয়ার্ড!")
-        st.write("---")
+with col_top1:
+    if not st.session_state['exam_in_progress']:
+        if st.session_state['is_admin_logged_in']:
+            current_mode = st.radio("অ্যাডমিন মোড মেনু:", ["📝 প্রশ্ন আপলোড ও সেটআপ", "📊 সকল শিক্ষার্থীর ফলাফল"], horizontal=True, key="top_admin_menu")
+        else:
+            current_mode = st.radio("মোড নির্বাচন:", ["📝 পরীক্ষা দিন", "🏆 ক্লাসের মেধা তালিকা দেখুন"], horizontal=True, key="top_student_menu")
+    else:
+        current_mode = "📝 পরীক্ষা দিন"
+        st.info("⚠️ পরীক্ষা চলমান রয়েছে।")
 
-    is_admin = st.session_state['is_admin_logged_in']
-    admin_menu = None
-    student_menu = "📝 পরীক্ষা দিন"
-
-    if is_admin:
-        st.success("✅ অ্যাডমিন মোড সক্রিয়!")
-        admin_menu = st.radio("অ্যাডমিন অপশন:", [
-            "📝 প্রশ্ন আপলোড ও সেটআপ",
-            "📊 সকল শিক্ষার্থীর ফলাফল"
-        ], key="admin_radio_menu")
-        
-        st.write("---")
-        if st.button("🚪 লগ আউট করুন", key="logout_btn"):
+with col_top2:
+    if st.session_state['is_admin_logged_in']:
+        if st.button("🚪 লগ আউট", type="secondary", key="main_logout_btn"):
             st.session_state['is_admin_logged_in'] = False
             st.session_state['confirmed_student_name'] = ""
             st.session_state['exam_submitted'] = False
@@ -177,20 +162,23 @@ with st.sidebar:
             st.session_state['exam_in_progress'] = False
             st.rerun()
     else:
-        if not st.session_state['exam_in_progress']:
-            student_menu = st.radio(
-                "নেভিগেশন নির্বাচন:",
-                ["📝 পরীক্ষা দিন", "🏆 ক্লাসের মেধা তালিকা দেখুন"],
-                key="student_radio_menu"
-            )
-        else:
-            st.info("⚠️ পরীক্ষা চলমান রয়েছে।")
-            student_menu = "📝 পরীক্ষা দিন"
+        with st.expander("🔐 শিক্ষক লগইন"):
+            admin_pwd = st.text_input("পাসওয়ার্ড:", type="password", key="main_admin_pwd")
+            if st.button("লগইন", key="main_login_btn"):
+                if admin_pwd == ADMIN_PASSWORD:
+                    st.session_state['is_admin_logged_in'] = True
+                    st.rerun()
+                else:
+                    st.error("ভুল পাসওয়ার্ড!")
+
+st.write("---")
+
+is_admin = st.session_state['is_admin_logged_in']
 
 # ==========================================
 # মূল পেজ ও লজিক হ্যান্ডলিং
 # ==========================================
-if is_admin and admin_menu == "📊 সকল শিক্ষার্থীর ফলাফল":
+if is_admin and current_mode == "📊 সকল শিক্ষার্থীর ফলাফল":
     st.subheader("🏆 সকল শিক্ষার্থীর ফলাফল তালিকা")
     st.write("---")
     
@@ -228,7 +216,7 @@ if is_admin and admin_menu == "📊 সকল শিক্ষার্থীর 
     else:
         st.warning("কোনো ফলাফল জমা হয়নি।")
 
-elif not is_admin and student_menu == "🏆 ক্লাসের মেধা তালিকা দেখুন":
+elif not is_admin and current_mode == "🏆 ক্লাসের মেধা তালিকা দেখুন":
     st.subheader("🏆 ক্লাসের লাইভ মেধা তালিকা")
     st.write("---")
     
@@ -445,7 +433,7 @@ else:
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    st.subheader("📊 বিস্তারিত উত্তরমালা (৪ অপশনসহ সঠিক ও ভুল মার্কিং)")
+                    st.subheader("📊 বিস্তারিত উত্তরমালা")
                     st.write("---")
                     
                     for i, row in res_info['active_df'].iterrows():
