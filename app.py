@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import random
@@ -167,104 +166,84 @@ st.markdown(
 
 def load_questions():
 
+    columns = [
+        "Subject",
+        "Question",
+        "Option_A",
+        "Option_B",
+        "Option_C",
+        "Option_D",
+        "Correct_Answer",
+        "Explanation"
+    ]
+
     if os.path.exists(QUESTIONS_FILE):
 
         try:
 
             df = pd.read_csv(
-                QUESTIONS_FILE
+                QUESTIONS_FILE,
+                encoding="utf-8-sig"
             )
 
-            required_columns = [
-                "Subject",
-                "Question",
-                "Option_A",
-                "Option_B",
-                "Option_C",
-                "Option_D",
-                "Correct_Answer",
-                "Explanation"
-            ]
-
-            for col in required_columns:
+            for col in columns:
 
                 if col not in df.columns:
                     df[col] = ""
 
-            return df[required_columns]
+            return df[columns]
 
         except Exception:
+            pass
 
-            return pd.DataFrame(
-                columns=[
-                    "Subject",
-                    "Question",
-                    "Option_A",
-                    "Option_B",
-                    "Option_C",
-                    "Option_D",
-                    "Correct_Answer",
-                    "Explanation"
-                ]
-            )
-
-    return pd.DataFrame(
-        columns=[
-            "Subject",
-            "Question",
-            "Option_A",
-            "Option_B",
-            "Option_C",
-            "Option_D",
-            "Correct_Answer",
-            "Explanation"
-        ]
-    )
+    return pd.DataFrame(columns=columns)
 
 
 def load_results():
+
+    columns = [
+        "Student Name",
+        "Subject",
+        "Score",
+        "Total Marks",
+        "Submission Time"
+    ]
 
     if os.path.exists(RESULT_FILE):
 
         try:
 
             return pd.read_csv(
-                RESULT_FILE
+                RESULT_FILE,
+                encoding="utf-8-sig"
             )
 
         except Exception:
             pass
 
-    return pd.DataFrame(
-        columns=[
-            "Student Name",
-            "Subject",
-            "Score",
-            "Total Marks",
-            "Submission Time"
-        ]
-    )
+    return pd.DataFrame(columns=columns)
 
 
 def load_configs():
+
+    columns = [
+        "Subject",
+        "Duration"
+    ]
 
     if os.path.exists(CONFIG_FILE):
 
         try:
 
             return pd.read_csv(
-                CONFIG_FILE
+                CONFIG_FILE,
+                encoding="utf-8-sig"
             )
 
         except Exception:
             pass
 
-    return pd.DataFrame(
-        columns=[
-            "Subject",
-            "Duration"
-        ]
-    )
+    return pd.DataFrame(columns=columns)
 
 
 def get_duration(subject):
@@ -377,20 +356,13 @@ def answer_matches(
         "d": normalize_answer(
             row["Option_D"]
         )
-
     }
 
     if selected in option_map:
-
-        selected = option_map[
-            selected
-        ]
+        selected = option_map[selected]
 
     if correct in option_map:
-
-        correct = option_map[
-            correct
-        ]
+        correct = option_map[correct]
 
     return selected == correct
 
@@ -490,9 +462,7 @@ if not st.session_state["exam_in_progress"]:
                         "✅ Admin Login সফল হয়েছে!"
                     )
 
-                    time.sleep(
-                        0.5
-                    )
+                    time.sleep(0.5)
 
                     st.rerun()
 
@@ -731,15 +701,10 @@ if st.session_state[
                             continue
 
                         question = lines[0]
-
                         option_a = lines[1]
-
                         option_b = lines[2]
-
                         option_c = lines[3]
-
                         option_d = lines[4]
-
                         correct_answer = lines[5]
 
                         explanation = (
@@ -831,7 +796,6 @@ if st.session_state[
                             uploaded_file,
                             header=None
                         )
-
 
                     st.success(
                         "✅ ফাইল সফলভাবে পড়া হয়েছে।"
@@ -936,7 +900,6 @@ if st.session_state[
                                 ]
                             )
 
-
                             for _, row in selected_columns.iterrows():
 
                                 values = list(row)
@@ -946,7 +909,6 @@ if st.session_state[
 
                                 if pd.isna(values[0]):
                                     continue
-
 
                                 question = str(
                                     values[0]
@@ -983,7 +945,7 @@ if st.session_state[
                                 if question.lower() == "question":
                                     continue
 
-                                if question == "প্রশ্ন":
+                                if question.lower() == "প্রশ্ন":
                                     continue
 
 
@@ -1071,7 +1033,6 @@ if st.session_state[
 
         questions_df = load_questions()
 
-
         if questions_df.empty:
 
             st.info(
@@ -1085,12 +1046,10 @@ if st.session_state[
                 == admin_subject
             ]
 
-
             st.write(
                 f"**{admin_subject} বিষয়ে মোট প্রশ্ন: "
                 f"{len(subject_questions)}টি**"
             )
-
 
             if not subject_questions.empty:
 
@@ -1105,15 +1064,12 @@ if st.session_state[
                     ]
                 ]
 
-
                 st.dataframe(
                     preview_df,
                     use_container_width=True
                 )
 
-
                 st.markdown("---")
-
 
                 if st.button(
                     f"🗑️ {admin_subject} বিষয়ের সব প্রশ্ন মুছুন"
@@ -1152,7 +1108,6 @@ if st.session_state[
 
         results_df = load_results()
 
-
         if results_df.empty:
 
             st.info(
@@ -1166,13 +1121,11 @@ if st.session_state[
                 use_container_width=True
             )
 
-
             csv_data = (
                 results_df
                 .to_csv(index=False)
                 .encode("utf-8-sig")
             )
-
 
             st.download_button(
                 "⬇️ ফলাফল CSV Download",
@@ -1181,9 +1134,7 @@ if st.session_state[
                 mime="text/csv"
             )
 
-
             st.markdown("---")
-
 
             if st.button(
                 "🗑️ সকল ফলাফল মুছে ফেলুন"
@@ -1214,14 +1165,15 @@ if st.session_state[
 # STUDENT HOME
 # =========================================================
 
-if not st.session_state[
-    "exam_in_progress"
-]:
+if (
+    not st.session_state["exam_in_progress"]
+    and
+    not st.session_state["is_admin_logged_in"]
+):
 
     st.header(
         "🎯 পরীক্ষা শুরু করুন"
     )
-
 
     selected_subject = st.selectbox(
         "বিষয় নির্বাচন করুন",
@@ -1229,23 +1181,18 @@ if not st.session_state[
         key="student_subject"
     )
 
-
     all_questions = load_questions()
-
 
     subject_questions = all_questions[
         all_questions["Subject"]
         == selected_subject
     ]
 
-
     duration = get_duration(
         selected_subject
     )
 
-
     col1, col2 = st.columns(2)
-
 
     with col1:
 
@@ -1254,14 +1201,12 @@ if not st.session_state[
             f"{duration} মিনিট"
         )
 
-
     with col2:
 
         st.metric(
             "📝 প্রশ্ন",
             len(subject_questions)
         )
-
 
     if len(subject_questions) == 0:
 
@@ -1275,7 +1220,6 @@ if not st.session_state[
             "👤 শিক্ষার্থীর নাম"
         )
 
-
         if st.button(
             "🚀 পরীক্ষা শুরু করুন",
             use_container_width=True
@@ -1284,7 +1228,7 @@ if not st.session_state[
             if not student_name.strip():
 
                 st.warning(
-                    "⚠️ পরীক্ষার্থী নাম লিখুন।"
+                    "⚠️ পরীক্ষার্থীর নাম লিখুন।"
                 )
 
             else:
@@ -1293,26 +1237,21 @@ if not st.session_state[
                     "confirmed_student_name"
                 ] = student_name.strip()
 
-
                 st.session_state[
                     "selected_exam_subject"
                 ] = selected_subject
-
 
                 st.session_state[
                     "exam_in_progress"
                 ] = True
 
-
                 st.session_state[
                     "exam_submitted"
                 ] = False
 
-
                 st.session_state[
                     "exam_start_time"
                 ] = time.time()
-
 
                 st.rerun()
 
@@ -1325,48 +1264,36 @@ if st.session_state[
     "exam_in_progress"
 ]:
 
-    subject = (
-        st.session_state[
-            "selected_exam_subject"
-        ]
-    )
+    subject = st.session_state[
+        "selected_exam_subject"
+    ]
 
-
-    student_name = (
-        st.session_state[
-            "confirmed_student_name"
-        ]
-    )
-
+    student_name = st.session_state[
+        "confirmed_student_name"
+    ]
 
     duration = get_duration(
         subject
     )
 
-
     all_questions = load_questions()
-
 
     active_df = all_questions[
         all_questions["Subject"]
         == subject
     ].copy()
 
-
     active_df = active_df.reset_index(
         drop=True
     )
-
 
     st.header(
         "📝 পরীক্ষা চলছে"
     )
 
-
     st.write(
         f"👤 পরীক্ষার্থী: **{student_name}**"
     )
-
 
     st.write(
         f"📚 বিষয়: **{subject}**"
@@ -1377,18 +1304,14 @@ if st.session_state[
     # TIMER
     # =====================================================
 
-    start_time = (
-        st.session_state[
-            "exam_start_time"
-        ]
-    )
-
+    start_time = st.session_state[
+        "exam_start_time"
+    ]
 
     elapsed = (
         time.time()
         - start_time
     )
-
 
     remaining_seconds = max(
         0,
@@ -1398,19 +1321,15 @@ if st.session_state[
         )
     )
 
-
     minutes = (
         remaining_seconds // 60
     )
-
 
     seconds = (
         remaining_seconds % 60
     )
 
-
     timer_placeholder = st.empty()
-
 
     timer_placeholder.markdown(
         f"""
@@ -1449,7 +1368,6 @@ if st.session_state[
 
     answers = {}
 
-
     for i, row in active_df.iterrows():
 
         st.markdown(
@@ -1467,14 +1385,12 @@ if st.session_state[
             unsafe_allow_html=True
         )
 
-
         options = [
             row["Option_A"],
             row["Option_B"],
             row["Option_C"],
             row["Option_D"]
         ]
-
 
         answer = st.radio(
             "উত্তর নির্বাচন করুন:",
@@ -1483,9 +1399,7 @@ if st.session_state[
             index=None
         )
 
-
         answers[i] = answer
-
 
         st.markdown("---")
 
@@ -1501,13 +1415,11 @@ if st.session_state[
 
         score = 0
 
-
         for i, row in active_df.iterrows():
 
             selected_answer = answers.get(
                 i
             )
-
 
             if answer_matches(
                 selected_answer,
@@ -1516,18 +1428,15 @@ if st.session_state[
 
                 score += 1
 
-
         total_marks = len(
             active_df
         )
-
 
         submission_time = (
             datetime.now().strftime(
                 "%Y-%m-%d %H:%M:%S"
             )
         )
-
 
         new_result = pd.DataFrame(
             [
@@ -1542,9 +1451,7 @@ if st.session_state[
             ]
         )
 
-
         old_results = load_results()
-
 
         final_results = pd.concat(
             [
@@ -1554,11 +1461,9 @@ if st.session_state[
             ignore_index=True
         )
 
-
         save_results(
             final_results
         )
-
 
         st.session_state[
             "last_result_data"
@@ -1578,21 +1483,17 @@ if st.session_state[
 
         }
 
-
         st.session_state[
             "exam_submitted"
         ] = True
-
 
         st.session_state[
             "exam_in_progress"
         ] = False
 
-
         st.session_state[
             "exam_start_time"
         ] = None
-
 
         st.rerun()
 
@@ -1608,38 +1509,30 @@ if (
     and
     st.session_state[
         "last_result_data"
-    ]
-    is not None
+    ] is not None
 ):
 
-    result = (
-        st.session_state[
-            "last_result_data"
-        ]
-    )
-
+    result = st.session_state[
+        "last_result_data"
+    ]
 
     st.header(
         "🏆 পরীক্ষার ফলাফল"
     )
 
-
     score = result[
         "score"
     ]
 
-
     total = result[
         "total_marks"
     ]
-
 
     percentage = (
         (score / total) * 100
         if total > 0
         else 0
     )
-
 
     st.markdown(
         f"""
@@ -1673,7 +1566,6 @@ if (
         unsafe_allow_html=True
     )
 
-
     if percentage >= 80:
 
         st.success(
@@ -1698,7 +1590,6 @@ if (
             "📚 আরও বেশি অনুশীলন করুন।"
         )
 
-
     if st.button(
         "🏠 হোমে ফিরে যান",
         use_container_width=True
@@ -1708,11 +1599,9 @@ if (
             "exam_submitted"
         ] = False
 
-
         st.session_state[
             "last_result_data"
         ] = None
-
 
         st.rerun()
 
@@ -1729,15 +1618,17 @@ if (
     not st.session_state[
         "is_admin_logged_in"
     ]
+    and
+    not st.session_state[
+        "exam_submitted"
+    ]
 ):
 
     st.markdown("---")
 
-
     st.header(
         "🏆 Leaderboard"
     )
-
 
     leaderboard_subject = st.selectbox(
         "Leaderboard-এর বিষয় নির্বাচন করুন",
@@ -1745,9 +1636,7 @@ if (
         key="leaderboard_subject"
     )
 
-
     results_df = load_results()
-
 
     if results_df.empty:
 
@@ -1761,7 +1650,6 @@ if (
             results_df["Subject"]
             == leaderboard_subject
         ].copy()
-
 
         if subject_results.empty:
 
@@ -1778,7 +1666,6 @@ if (
                 errors="coerce"
             )
 
-
             subject_results = (
                 subject_results
                 .sort_values(
@@ -1787,14 +1674,12 @@ if (
                 )
             )
 
-
             subject_results = (
                 subject_results
                 .reset_index(
                     drop=True
                 )
             )
-
 
             subject_results.insert(
                 0,
@@ -1804,7 +1689,6 @@ if (
                     len(subject_results) + 1
                 )
             )
-
 
             st.dataframe(
                 subject_results[
@@ -1826,7 +1710,6 @@ if (
 
 st.markdown("---")
 
-
 st.markdown(
     """
     <div style="
@@ -1844,4 +1727,3 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-```
