@@ -1,12 +1,4 @@
-# Let's inspect the user's code snippet provided in the prompt. It looks like the user pasted a Streamlit application code that got abruptly cut off at the end ("for o in [opt_a_str, opt_b_str, opt_c_str, opt_d_str]:").
-# Wait, the user's prompt is literally the python code for a Streamlit app. Let's see what the user wants or if they want us to fix/complete/package/convert or analyze it. 
-# Ah, the prompt text starts directly with `import streamlit as st` and has no explicit question or instruction. 
-# Wait! Let's review the prompt: the user provided a full Streamlit application script for an online exam platform (with Bangla support, CSS styling, admin/student panels, leaderboards, timers, question parsing, etc.). The script ends abruptly at `for o in [opt_a_str, opt_b_str, opt_c_str, opt_d_str]:`.
-# Let's check if the user wants the complete, fixed, and polished version of this Streamlit app, or if they want it formatted/saved/packaged.
-# Wait, let's complete and polish the Streamlit app script, fix any syntax issues or incomplete code blocks, and provide the fully working file as requested by the file generation guidelines, or output the complete code nicely.
-# Let's check the rules: "When fulfilling requests to generate files (PDF, Markdown, TXT, LaTeX, CSV, XLSX)..." Wait, is .py requested as a file? The user pasted python code. Let's provide the completed Python script as a downloadable/cleanly formatted file or code block, or complete the code. Let's look at the remaining part of the submission logic so it is 100% bug-free and fully functional.
-
-code_snippet = """import streamlit as st
+import streamlit as st
 import pandas as pd
 import random
 import os
@@ -15,23 +7,18 @@ from datetime import datetime
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="centered")
 
-# মোবাইলের জন্য ফন্ট সাইজ ছোট করা, সুন্দর বক্স বা কার্ড ডিজাইন এবং ফিক্সড টাইমার সিএসএস
-hide_streamlit_style = \"\"\"
+# CSS স্টাইল
+hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .stAppToolbar {visibility: hidden;}
-    div[data-testid="stStatusWidget"] {visibility: hidden;}
-    .viewerBadge_container__1QSob {visibility: hidden;}
-    #GithubIcon {visibility: hidden;}
     
-    /* মোবাইল ও ডেস্কটপের জন্য সার্বিক ফন্ট সাইজ ছোট ও কম্প্যাক্ট করা */
     html, body, [class*="css"] {
         font-size: 14px !important;
     }
     
-    /* প্রশ্নগুলোর জন্য সুন্দর বক্স বা কার্ড স্টাইল */
     .question-card {
         background-color: #fcfcfc;
         border: 1px solid #e0e0e0;
@@ -41,7 +28,6 @@ hide_streamlit_style = \"\"\"
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
     
-    /* ফলাফল প্রদর্শনের জন্য প্রিমিয়াম বক্স */
     .result-box {
         background: linear-gradient(135deg, #f6d365, #fda085);
         color: #2c3e50;
@@ -53,7 +39,6 @@ hide_streamlit_style = \"\"\"
         margin-bottom: 20px;
     }
     
-    /* মোবাইলে সবসময় উপরে টাইমার ভাসমান বা ফিক্সড রাখার জন্য */
     .fixed-timer {
         position: sticky;
         top: 0;
@@ -69,26 +54,24 @@ hide_streamlit_style = \"\"\"
         font-size: 14px;
     }
     </style>
-\"\"\"
+"""
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# ব্যানার (বিসিএস, ব্যাংক, প্রাথমিক সহকারী শিক্ষক নিয়োগ এবং NTRCA সংযুক্ত করে)
-st.markdown(\"\"\"
+# ব্যানার
+st.markdown("""
     <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #654ea3, #eaafc8); border-radius: 8px; margin-bottom: 15px; color: white;">
         <h2 style="margin: 0; font-size: 22px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h2>
         <p style="margin: 5px 0 8px 0; font-size: 13px; opacity: 0.95;">বিসিএস, ব্যাংক, প্রাথমিক সহকারী শিক্ষক নিয়োগ এবং NTRCA সহ সকল সরকারি চাকরির প্রস্তুতির বিশ্বস্ত মাধ্যম</p>
         <h4 style="margin: 0; font-size: 15px; letter-spacing: 1px;">✨ Powered by <span style="background-color: #ffcc00; color: #000; padding: 2px 8px; border-radius: 4px;">Job Efforts</span></h4>
     </div>
-\"\"\", unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 RESULT_FILE = "results.csv"
 QUESTIONS_FILE = "saved_questions.csv"
 CONFIG_FILE = "exam_configs.csv"
 ADMIN_PASSWORD = "1234"
 
-# ==========================================
-# 🔐 সেশন স্টেট ম্যানেজমেন্ট
-# ==========================================
+# সেশন স্টেট ইনিশিয়ালাইজেশন
 if 'is_admin_logged_in' not in st.session_state:
     st.session_state['is_admin_logged_in'] = False
 
@@ -107,28 +90,15 @@ if 'selected_exam_subject' not in st.session_state:
 if 'exam_in_progress' not in st.session_state:
     st.session_state['exam_in_progress'] = False
 
-# নেভিগেশন ট্যাব নির্ধারণ
-if not st.session_state['is_admin_logged_in'] and not st.session_state['exam_in_progress']:
-    mobile_nav = st.radio(
-        "নেভিগেশন ট্যাব:",
-        ["📝 পরীক্ষা দিন", "🏆 ক্লাসের মেধা তালিকা (Leaderboard)"],
-        horizontal=True,
-        label_visibility="collapsed"
-    )
-    student_menu = mobile_nav
-    is_admin = False
-elif st.session_state['exam_in_progress']:
-    student_menu = "📝 পরীক্ষা দিন"
-    is_admin = False
-else:
-    student_menu = None
-    is_admin = True
 
+# ==========================================
+# ⚙️ সাইডবার কন্ট্রোল প্যানেল (সবসময় দৃশ্যমান থাকবে)
+# ==========================================
 st.sidebar.header("⚙️ কন্ট্রোল প্যানেল")
 
 admin_menu = None
+student_menu = None
 
-# অ্যাডমিন লগইন সেকশন
 if st.session_state['is_admin_logged_in']:
     st.sidebar.success("✅ অ্যাডমিন মোড সক্রিয়!")
     
@@ -146,6 +116,7 @@ if st.session_state['is_admin_logged_in']:
     ])
     is_admin = True
 else:
+    is_admin = False
     if not st.session_state['exam_in_progress']:
         with st.sidebar.expander("🔐 শিক্ষক/অ্যাডমিন লগইন"):
             entered_password = st.text_input("পাসওয়ার্ড দিন:", type="password", key="admin_pwd_input")
@@ -155,6 +126,16 @@ else:
                     st.rerun()
                 else:
                     st.sidebar.error("❌ ভুল পাসওয়ার্ড!")
+                    
+    # শিক্ষার্থী বা সাধারণ মোডের জন্য ট্যাব
+    if not st.session_state['exam_in_progress']:
+        student_menu = st.sidebar.radio(
+            "নেভিগেশন:",
+            ["📝 পরীক্ষা দিন", "🏆 ক্লাসের মেধা তালিকা (Leaderboard)"]
+        )
+    else:
+        student_menu = "📝 পরীক্ষা দিন"
+
 
 # ==========================================
 # 📊 ১. অ্যাডমিন: মেধা তালিকা ও রিপোর্ট সেক্টর
@@ -225,21 +206,21 @@ elif not is_admin and student_menu == "🏆 ক্লাসের মেধা �
 # ==========================================
 else:
     if is_admin:
-        st.sidebar.markdown("### 📚 নতুন প্রশ্ন সংযোজন")
+        st.subheader("📚 নতুন প্রশ্ন সংযোজন (অ্যাডমিন প্যানেল)")
         
         subject_options = ["বাংলা", "English", "গণিত", "বিজ্ঞান", "বাংলাদেশের বিষয়াবলি", "আন্তর্জাতিক বিষয়াবলি", "ICT"]
-        subject_name = st.sidebar.selectbox("বিষয়ের নাম:", subject_options)
-        exam_duration = st.sidebar.number_input("⏱️ সময় (মিনিট):", min_value=1, max_value=300, value=10)
+        subject_name = st.selectbox("বিষয়ের নাম:", subject_options)
+        exam_duration = st.number_input("⏱️ সময় (মিনিট):", min_value=1, max_value=300, value=10)
         
-        st.sidebar.markdown("---")
-        input_mode = st.sidebar.radio("পদ্ধতি:", ["টেক্সট পেস্ট (Easy Paste)", "ফাইল আপলোড"], key="admin_input_mode")
+        st.markdown("---")
+        input_mode = st.radio("পদ্ধতি:", ["টেক্সট পেস্ট (Easy Paste)", "ফাইল আপলোড"], key="admin_input_mode")
 
         if input_mode == "টেক্সট পেস্ট (Easy Paste)":
-            pasted_text = st.sidebar.text_area("প্রশ্ন পেস্ট করুন:", height=200, placeholder="১. প্রশ্ন...\nক) ...\nখ) ...\nগ) ...\nঘ) ...\nউত্তর: ক")
+            pasted_text = st.text_area("প্রশ্ন পেস্ট করুন:", height=200, placeholder="১. প্রশ্ন...\nক) ...\nখ) ...\nগ) ...\nঘ) ...\nউত্তর: ক")
             
-            if st.sidebar.button("📌 সেভ করুন"):
+            if st.button("📌 সেভ করুন"):
                 if not pasted_text:
-                    st.sidebar.error("⚠️ প্রশ্ন দিন।")
+                    st.error("⚠️ প্রশ্ন দিন।")
                 else:
                     parsed_questions = []
                     blocks = pasted_text.strip().split('\n\n')
@@ -286,10 +267,10 @@ else:
                         else:
                             final_conf = config_df
                         final_conf.to_csv(CONFIG_FILE, index=False)
-                        st.sidebar.success("✅ সফলভাবে সেভ হয়েছে!")
+                        st.success("✅ সফলভাবে সেভ হয়েছে!")
 
         else:
-            uploaded_file = st.sidebar.file_uploader("ফাইল আপলোড (xlsx/csv):", type=["xlsx", "csv"])
+            uploaded_file = st.file_uploader("ফাইল আপলোড (xlsx/csv):", type=["xlsx", "csv"])
             if uploaded_file is not None:
                 try:
                     raw_df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
@@ -304,7 +285,7 @@ else:
                         "ICT (AK-AP)": (36, 42)
                     }
                     
-                    selected_range_name = st.sidebar.selectbox("কলাম রেঞ্জ সিলেক্ট করুন:", options=list(column_ranges.keys()))
+                    selected_range_name = st.selectbox("কলাম রেঞ্জ সিলেক্ট করুন:", options=list(column_ranges.keys()))
                     start_idx, end_idx = column_ranges[selected_range_name]
                     
                     if end_idx <= len(raw_df.columns):
@@ -316,9 +297,9 @@ else:
                         else:
                             sub_df['Explanation'] = sub_df['Explanation'].fillna('ব্যাখ্যা নেই।')
                         
-                        st.sidebar.write(f"🔍 ফাইল থেকে মোট প্রশ্ন পাওয়া গেছে: {len(sub_df)}টি")
+                        st.write(f"🔍 ফাইল থেকে মোট প্রশ্ন পাওয়া গেছে: {len(sub_df)}টি")
                         
-                        upload_sub_mode = st.sidebar.radio(
+                        upload_sub_mode = st.radio(
                             "আপলোড করার পদ্ধতি বেছে নিন:",
                             ["সব প্রশ্ন একসাথে (Bulk Import)", "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই", "একটি একটি করে দেখে সিলেক্ট করুন (Manual)"]
                         )
@@ -329,12 +310,12 @@ else:
                             questions_to_save = sub_df
                             
                         elif upload_sub_mode == "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই":
-                            sample_size = st.sidebar.number_input("কতটি প্রশ্ন রেন্ডমলি নিতে চান?", min_value=1, max_value=len(sub_df), value=min(10, len(sub_df)))
+                            sample_size = st.number_input("কতটি প্রশ্ন রেন্ডমলি নিতে চান?", min_value=1, max_value=len(sub_df), value=min(10, len(sub_df)))
                             questions_to_save = sub_df.sample(n=sample_size).reset_index(drop=True)
-                            st.sidebar.success(f"✨ স্বয়ংক্রিয়ভাবে {sample_size}টি প্রশ্ন বাছাই করা হয়েছে!")
+                            st.success(f"✨ স্বয়ংক্রিয়ভাবে {sample_size}টি প্রশ্ন বাছাই করা হয়েছে!")
                             
                         else:
-                            st.sidebar.markdown("---")
+                            st.markdown("---")
                             st.markdown("### 🔍 ম্যানুয়াল প্রশ্ন সিলেকশন প্রিভিউ")
                             selected_indices = []
                             for idx, row in sub_df.iterrows():
@@ -342,7 +323,7 @@ else:
                                     selected_indices.append(idx)
                             questions_to_save = sub_df.loc[selected_indices].reset_index(drop=True)
 
-                        if st.sidebar.button("📌 ফাইল থেকে সেভ করুন"):
+                        if st.button("📌 ফাইল থেকে সেভ করুন"):
                             if not questions_to_save.empty:
                                 questions_to_save['Subject'] = subject_name
                                 if os.path.exists(QUESTIONS_FILE):
@@ -363,13 +344,13 @@ else:
                                     final_conf = config_df
                                 final_conf.to_csv(CONFIG_FILE, index=False)
                                 
-                                st.sidebar.success("✅ ফাইল থেকে সফলভাবে সেভ হয়েছে!")
+                                st.success("✅ ফাইল থেকে সফলভাবে সেভ হয়েছে!")
                             else:
-                                st.sidebar.error("⚠️ কোনো প্রশ্ন সিলেক্ট করা হয়নি।")
+                                st.error("⚠️ কোনো প্রশ্ন সিলেক্ট করা হয়নি।")
                     else:
-                        st.sidebar.error("⚠️ আপনার ফাইলের কলাম সংখ্যা নির্ধারিত রেঞ্জের চেয়ে কম। সঠিক ফাইল বা কলাম রেঞ্জ নির্বাচন করুন।")
+                        st.error("⚠️ আপনার ফাইলের কলাম সংখ্যা নির্ধারিত রেঞ্জের চেয়ে কম। সঠিক ফাইল বা কলাম রেঞ্জ নির্বাচন করুন।")
                 except Exception as e:
-                    st.sidebar.error(f"ত্রুটি: {e}")
+                    st.error(f"ত্রুটি: {e}")
 
         st.write("---")
         st.subheader("📂 সংরক্ষিত বিষয়সমূহ (প্রশ্ন প্রিভিউ সহ)")
@@ -381,7 +362,7 @@ else:
                     count = len(sub_q_df)
                     with st.expander(f"📁 {sub} (প্রশ্ন: {count}টি)"):
                         for i, q_row in sub_q_df.iterrows():
-                            st.markdown(f\"\"\"
+                            st.markdown(f"""
                                 <div style="background-color: #fcfcfc; border: 1px solid #e0e0e0; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
                                     <strong>প্রশ্ন {i+1}: {q_row['Question']}</strong><br>
                                     • {q_row['Option_A']}<br>
@@ -390,7 +371,7 @@ else:
                                     • {q_row['Option_D']}<br>
                                     <span style="color: green; font-weight: bold;">সঠিক উত্তর: {q_row['Correct_Answer']}</span>
                                 </div>
-                            \"\"\", unsafe_allow_html=True)
+                            """, unsafe_allow_html=True)
                         
                         if st.button(f"❌ '{sub}' এর সব প্রশ্ন মুছুন", key=f"del_{sub}"):
                             q_check_df[q_check_df['Subject'] != sub].to_csv(QUESTIONS_FILE, index=False)
@@ -414,14 +395,13 @@ else:
                         st.session_state['last_result_data'] = None
                         st.rerun()
 
-                    # ফলাফল প্রদর্শনের আকর্ষণীয় বক্স
-                    st.markdown(f\"\"\"
+                    st.markdown(f"""
                         <div class="result-box">
                             <h2>🎉 অভিনন্দন, {res_info['student_name']}!</h2>
                             <p style="font-size: 18px; margin: 5px 0;">বিষয়: {res_info['subject']}</p>
                             <h1 style="font-size: 32px; margin: 10px 0;">প্রাপ্ত নম্বর: {res_info['score']} / {res_info['total']}</h1>
                         </div>
-                    \"\"\", unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
                     
                     st.subheader("📊 বিস্তারিত উত্তরমালা (৪ অপশনসহ সঠিক ও ভুল মার্কিং)")
                     st.write("---")
@@ -477,14 +457,14 @@ else:
                             else:
                                 options_html += f"<div style='color: #555; margin: 4px 0;'>• {opt}</div>"
                         
-                        st.markdown(f\"\"\"
+                        st.markdown(f"""
                             <div class="question-card">
                                 <strong>প্রশ্ন {i+1}: {str(row['Question'])}</strong><br><br>
                                 {options_html}
                                 <hr style="margin: 8px 0;">
                                 <small>💡 ব্যাখ্যা: {row['Explanation']}</small>
                             </div>
-                        \"\"\", unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
             else:
                 if not st.session_state['exam_in_progress']:
                     st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন")
@@ -536,11 +516,11 @@ else:
                     remaining_seconds = max(0, total_seconds - elapsed_seconds)
                     mins, secs = remaining_seconds // 60, remaining_seconds % 60
                     
-                    st.markdown(f\"\"\"
+                    st.markdown(f"""
                         <div class="fixed-timer">
                             ⏳ বাকি সময়: {mins:02d} মিনিট {secs:02d} সেকেন্ড
                         </div>
-                    \"\"\", unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
                     
                     st.success(f"পরীক্ষার্থী: **{current_student}** ({selected_subject})")
                     st.write("---")
@@ -550,20 +530,19 @@ else:
                     for i, row in active_df.iterrows():
                         options_list = [str(row['Option_A']), str(row['Option_B']), str(row['Option_C']), str(row['Option_D'])]
                         
-                        with st.container():
-                            st.markdown(f\"\"\"
-                                <div class="question-card">
-                                    <strong>প্রশ্ন {i+1}: {str(row['Question'])}</strong>
-                                </div>
-                            \"\"\", unsafe_allow_html=True)
-                            
-                            user_answers[i] = st.radio(
-                                f"উত্তর নির্বাচন করুন (প্রশ্ন {i+1}):", 
-                                options_list, 
-                                index=None, 
-                                key=f"q_{i}_{selected_subject}",
-                                label_visibility="collapsed"
-                            )
+                        st.markdown(f"""
+                            <div class="question-card">
+                                <strong>প্রশ্ন {i+1}: {str(row['Question'])}</strong>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                        user_answers[i] = st.radio(
+                            f"উত্তর নির্বাচন করুন (প্রশ্ন {i+1}):", 
+                            options_list, 
+                            index=None, 
+                            key=f"q_{i}_{selected_subject}",
+                            label_visibility="collapsed"
+                        )
                     
                     if st.button("পরীক্ষা জমা দিন", type="primary"):
                         score = 0
@@ -577,57 +556,38 @@ else:
                             
                             correct_v = opt_a_str
                             for o in [opt_a_str, opt_b_str, opt_c_str, opt_d_str]:
-                                o_lower = o.lower()
-                                if raw_c in ['ক', 'a'] and (o.startswith('ক') or o_lower.startswith('a.')):
-                                    correct_v = o
-                                    break
-                                elif raw_c in ['খ', 'b'] and (o.startswith('খ') or o_lower.startswith('b.')):
-                                    correct_v = o
-                                    break
-                                elif raw_c in ['গ', 'c'] and (o.startswith('গ') or o_lower.startswith('c.')):
-                                    correct_v = o
-                                    break
-                                elif raw_c in ['ঘ', 'd'] and (o.startswith('ঘ') or o_lower.startswith('d.')):
-                                    correct_v = o
-                                    break
-                                elif raw_c == o_lower or raw_c in o_lower or o_lower in raw_c:
-                                    correct_v = o
-                                    break
-                            
-                            if ans and str(ans).strip() == correct_v:
+                                o_low = o.lower()
+                                if raw_c in ['ক', 'a'] and (o.startswith('ক') or o_low.startswith('a.')): correct_v = o
+                                elif raw_c in ['খ', 'b'] and (o.startswith('খ') or o_low.startswith('b.')): correct_v = o
+                                elif raw_c in ['গ', 'c'] and (o.startswith('গ') or o_low.startswith('c.')): correct_v = o
+                                elif raw_c in ['ঘ', 'd'] and (o.startswith('ঘ') or o_low.startswith('d.')): correct_v = o
+                                elif raw_c == o_low or raw_c in o_low or o_low in raw_c: correct_v = o
+
+                            if ans and (str(ans).strip() == correct_v or str(ans).strip().lower() == correct_v.lower()):
                                 score += 1
+
+                        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        new_result = pd.DataFrame([{
+                            "Student Name": current_student, "Subject": selected_subject,
+                            "Score": score, "Total Marks": len(active_df), "Submission Time": current_time
+                        }])
                         
-                        result_row = {
-                            "Student_Name": current_student,
-                            "Subject": selected_subject,
-                            "Score": score,
-                            "Total": len(active_df),
-                            "Date_Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        }
-                        
-                        res_df_save = pd.DataFrame([result_row])
                         if os.path.exists(RESULT_FILE):
-                            old_res = pd.read_csv(RESULT_FILE)
-                            final_res = pd.concat([old_res, res_df_save], ignore_index=True)
+                            updated_res = pd.concat([pd.read_csv(RESULT_FILE), new_result], ignore_index=True)
                         else:
-                            final_res = res_df_save
-                        final_res.to_csv(RESULT_FILE, index=source_flag := False or True)
+                            updated_res = new_result
+                        updated_res.to_csv(RESULT_FILE, index=False)
                         
                         st.session_state['exam_submitted'] = True
                         st.session_state['exam_in_progress'] = False
                         st.session_state['last_result_data'] = {
-                            "student_name": current_student,
-                            "subject": selected_subject,
-                            "score": score,
-                            "total": len(active_df),
-                            "active_df": active_df,
-                            "user_answers": user_answers
+                            'student_name': current_student,
+                            'subject': selected_subject,
+                            'score': score,
+                            'total': len(active_df),
+                            'active_df': active_df,
+                            'user_answers': user_answers
                         }
                         st.rerun()
-"""
-
-# Let's write this code to a python file or provide it cleanly to the user.
-with open("exam_app.py", "w", encoding="utf-8") as f:
-    f.write(code_snippet)
-
-print("Exam app script successfully compiled and saved.")
+        else:
+            st.info("⚠️ বর্তমানে কোনো পরীক্ষার প্রশ্ন আপলোড করা হয়নি। অ্যাডমিন প্যানেল থেকে প্রশ্ন যুক্ত করুন।")
