@@ -4,6 +4,7 @@ import random
 import os
 import time
 from datetime import datetime
+import streamlit.components.v1 as components
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="wide")
 
@@ -510,13 +511,55 @@ else:
 
                     elapsed_seconds = int(time.time() - st.session_state['exam_start_time'])
                     remaining_seconds = max(0, total_seconds - elapsed_seconds)
-                    mins, secs = remaining_seconds // 60, remaining_seconds % 60
                     
-                    st.markdown(f"""
-                        <div class="fixed-timer">
-                            ⏳ বাকি সময়: {mins:02d} মিনিট {secs:02d} সেকেন্ড
+                    # জাভাস্ক্রিপ্ট লাইভ টাইমার এবং অটো সাবমিটের জন্য লজিক
+                    timer_placeholder = st.empty()
+                    
+                    timer_html = f"""
+                        <div id="live-timer" style="
+                            background: linear-gradient(135deg, #ff4b4b, #ff9068);
+                            color: white;
+                            padding: 10px 15px;
+                            border-radius: 8px;
+                            text-align: center;
+                            font-weight: bold;
+                            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                            margin-bottom: 20px;
+                            font-size: 16px;
+                        ">
+                            ⏳ বাকি সময়: <span id="time-display">--:--</span>
                         </div>
-                    """, unsafe_allow_html=True)
+                        <script>
+                            var remainingSecs = {remaining_seconds};
+                            function updateTimer() {{
+                                var m = Math.floor(remainingSecs / 60);
+                                var s = remainingSecs % 60;
+                                var displayM = m < 10 ? "0" + m : m;
+                                var displayS = s < 10 ? "0" + s : s;
+                                
+                                var elem = document.getElementById("time-display");
+                                if (elem) {{
+                                    elem.innerHTML = displayM + " মিনিট " + displayS + " সেকেন্ড";
+                                }}
+                                
+                                if (remainingSecs <= 0) {{
+                                    clearInterval(timerInterval);
+                                    // অটো সাবমিটের জন্য পেজ রিফ্রেশ বা ট্রিগার করা
+                                    const submitButtons = window.parent.document.querySelectorAll('button');
+                                    for (let btn of submitButtons) {{
+                                        if (btn.innerText.includes('পরীক্ষা জমা দিন')) {{
+                                            btn.click();
+                                            break;
+                                        }}
+                                    }}
+                                }}
+                                remainingSecs--;
+                            }}
+                            updateTimer();
+                            var timerInterval = setInterval(updateTimer, 1000);
+                        </script>
+                    """
+                    components.html(timer_html, height=60)
                     
                     st.success(f"পরীক্ষার্থী: **{current_student}** ({selected_subject})")
                     st.write("---")
@@ -540,7 +583,8 @@ else:
                             label_visibility="collapsed"
                         )
                     
-                    if st.button("পরীক্ষা জমা দিন", type="primary"):
+                    # যদি সময় শেষ হয়ে যায় (remaining_seconds <= 0), সরাসরি সাবমিট ট্রিগার হবে
+                    if st.button("পরীক্ষা জমা দিন", type="primary") or remaining_seconds <= 0:
                         score = 0
                         for i, row in active_df.iterrows():
                             ans = user_answers.get(i)
