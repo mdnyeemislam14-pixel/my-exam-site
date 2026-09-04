@@ -7,7 +7,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="centered")
 
-# CSS স্টাইল
+# সাইডবারকে ডানপাশে সরানোর জন্য এবং অন্যান্য স্টাইলিং সিএসএস
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -17,6 +17,20 @@ hide_streamlit_style = """
     
     html, body, [class*="css"] {
         font-size: 14px !important;
+    }
+    
+    /* সাইডবারকে বাম থেকে সরিয়ে ডানপাশে (Right side) নিয়ে যাওয়ার কোড */
+    section[data-testid="stSidebar"] {
+        right: 0px !important;
+        left: auto !important;
+        border-left: 1px solid #e0e0e0;
+        border-right: none !important;
+    }
+    
+    /* মোবাইলে বা ছোট স্ক্রিনে সাইডবার টগল বাটন যেন ডানপাশে থাকে */
+    [data-testid="collapsedControl"] {
+        left: auto !important;
+        right: 1rem !important;
     }
     
     .question-card {
@@ -92,7 +106,7 @@ if 'exam_in_progress' not in st.session_state:
 
 
 # ==========================================
-# ⚙️ সাইডবার কন্ট্রোল প্যানেল (সবসময় দৃশ্যমান থাকবে)
+# ⚙️ কন্ট্রোল প্যানেল (ডানপাশের সাইডবার)
 # ==========================================
 st.sidebar.header("⚙️ কন্ট্রোল প্যানেল")
 
@@ -127,7 +141,6 @@ else:
                 else:
                     st.sidebar.error("❌ ভুল পাসওয়ার্ড!")
                     
-    # শিক্ষার্থী বা সাধারণ মোডের জন্য ট্যাব
     if not st.session_state['exam_in_progress']:
         student_menu = st.sidebar.radio(
             "নেভিগেশন:",
