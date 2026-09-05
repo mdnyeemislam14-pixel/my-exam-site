@@ -8,7 +8,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="wide")
 
-# ক্লিন, প্রিমিয়াম সিএসএস এবং সাবজেক্ট কার্ড ডিজাইন
+# ক্লিন ও আধুনিক সিএসএস (বক্স এবং কালার ফিক্স করার জন্য)
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -35,6 +35,26 @@ hide_streamlit_style = """
         user-select: none;
     }
     
+    /* কাস্টম সাবজেক্ট কার্ড স্টাইল */
+    .subject-box-active {
+        background-color: #f0f4ff !important;
+        border: 2px solid #2563eb !important;
+        padding: 18px !important;
+        border-radius: 12px !important;
+        text-align: center !important;
+        margin-bottom: 10px !important;
+        box-shadow: 0 4px 6px rgba(37, 99, 235, 0.1) !important;
+    }
+    
+    .subject-box-inactive {
+        background-color: #f8fafc !important;
+        border: 2px solid #cbd5e1 !important;
+        padding: 18px !important;
+        border-radius: 12px !important;
+        text-align: center !important;
+        margin-bottom: 10px !important;
+    }
+
     .question-card {
         background-color: #ffffff;
         border: 1px solid #e2e8f0;
@@ -331,7 +351,7 @@ else:
                     is_correct = (opt == correct_val or raw_correct.lower() in opt.lower())
                     is_user = (ans and str(ans).strip() == opt)
                     if is_correct and is_user:
-                        options_html += f"<div style='color: green; font-weight: bold;'>✅ {opt} (আপনার সঠিক উত্তর)</div>"
+                        options_html += f"<div style='color: green; font-weight: bold;'>✅ {opt} (আপনার সঠিক উত্তরী)</div>"
                     elif is_correct:
                         options_html += f"<div style='color: green; font-weight: bold;'>✅ {opt} (সঠিক উত্তর)</div>"
                     elif is_user:
@@ -370,7 +390,6 @@ else:
                 st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন")
                 st.write("---")
                 
-                # সম্পূর্ণ কাস্টম HTML গ্রিড কার্ড (রয়্যাল ব্লু বর্ডার ও সফট ব্যাকগ্রাউন্ড সহ ছোট সাইজ)
                 cols_per_row = 3
                 subject_chunks = [all_subjects_master[i:i + cols_per_row] for i in range(0, len(all_subjects_master), cols_per_row)]
                 
@@ -382,25 +401,22 @@ else:
                         with row_cols[idx]:
                             is_running = sub in active_subjects
                             if is_running:
-                                bg_color = "#f0f4ff"
-                                border_color = "#2563eb"
-                                status_html = "<span style='color: #137333; font-weight: bold; font-size: 11px;'>🟢 পরীক্ষা আছে</span>"
-                                btn_disabled = False
+                                box_class = "subject-box-active"
+                                status_html = "<span style='color: #137333; font-weight: bold; font-size: 12px;'>🟢 পরীক্ষা আছে</span>"
                             else:
-                                bg_color = "#fcfcfc"
-                                border_color = "#cbd5e1"
-                                status_html = "<span style='color: #64748b; font-weight: bold; font-size: 11px;'>⚪ পরীক্ষা নেই</span>"
-                                btn_disabled = True
+                                box_class = "subject-box-inactive"
+                                status_html = "<span style='color: #64748b; font-weight: bold; font-size: 12px;'>⚪ পরীক্ষা নেই</span>"
                             
+                            # কাস্টম ক্লাস ব্যবহার করে ব্যাকগ্রাউন্ড ও বর্ডার নিশ্চিত করা হয়েছে
                             st.markdown(f"""
-                                <div style="background-color: {bg_color}; border: 2px solid {border_color}; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 6px; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.05);">
-                                    <h4 style="margin: 0 0 4px 0; color: #1e3d59; font-size: 14px; font-weight: bold;">{sub}</h4>
+                                <div class="{box_class}">
+                                    <h4 style="margin: 0 0 6px 0; color: #1e3d59; font-size: 15px; font-weight: bold;">{sub}</h4>
                                     {status_html}
                                 </div>
                             """, unsafe_allow_html=True)
                             
                             if is_running:
-                                if st.button(f"শুরু করুন: {sub}", key=f"btn_sub_{sub}", use_container_width=True):
+                                if st.button(f"শুরু করুন: {sub}", key=f"btn_sub_{sub}", use_container_width=True, type="primary"):
                                     selected_card_subject = sub
                             else:
                                 st.button(f"বন্ধ আছে", key=f"btn_sub_{sub}", use_container_width=True, disabled=True)
@@ -409,7 +425,6 @@ else:
                     st.session_state['temp_selected_subject'] = selected_card_subject
                     st.rerun()
                 
-                # যদি কোনো সাবজেক্ট কার্ড থেকে সিলেক্ট করা হয়
                 if 'temp_selected_subject' in st.session_state and st.session_state['temp_selected_subject'] in active_subjects:
                     chosen_sub = st.session_state['temp_selected_subject']
                     st.write("---")
