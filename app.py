@@ -8,7 +8,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="wide")
 
-# ক্লিন ও আধুনিক সিএসএস (বক্স এবং কালার ফিক্স করার জন্য)
+# সাধারণ কিছু ক্লিনআপ সিএসএস (যা লেআউট ভাঙবে না)
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -35,33 +35,13 @@ hide_streamlit_style = """
         user-select: none;
     }
     
-    /* কাস্টম সাবজেক্ট কার্ড স্টাইল */
-    .subject-box-active {
-        background-color: #f0f4ff !important;
-        border: 2px solid #2563eb !important;
-        padding: 18px !important;
-        border-radius: 12px !important;
-        text-align: center !important;
-        margin-bottom: 10px !important;
-        box-shadow: 0 4px 6px rgba(37, 99, 235, 0.1) !important;
-    }
-    
-    .subject-box-inactive {
-        background-color: #f8fafc !important;
-        border: 2px solid #cbd5e1 !important;
-        padding: 18px !important;
-        border-radius: 12px !important;
-        text-align: center !important;
-        margin-bottom: 10px !important;
-    }
-
     .question-card {
         background-color: #ffffff;
         border: 1px solid #e2e8f0;
         padding: 22px;
         border-radius: 12px;
         margin-bottom: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         position: relative;
         z-index: 1;
     }
@@ -400,26 +380,18 @@ else:
                     for idx, sub in enumerate(chunk):
                         with row_cols[idx]:
                             is_running = sub in active_subjects
-                            if is_running:
-                                box_class = "subject-box-active"
-                                status_html = "<span style='color: #137333; font-weight: bold; font-size: 12px;'>🟢 পরীক্ষা আছে</span>"
-                            else:
-                                box_class = "subject-box-inactive"
-                                status_html = "<span style='color: #64748b; font-weight: bold; font-size: 12px;'>⚪ পরীক্ষা নেই</span>"
                             
-                            # কাস্টম ক্লাস ব্যবহার করে ব্যাকগ্রাউন্ড ও বর্ডার নিশ্চিত করা হয়েছে
-                            st.markdown(f"""
-                                <div class="{box_class}">
-                                    <h4 style="margin: 0 0 6px 0; color: #1e3d59; font-size: 15px; font-weight: bold;">{sub}</h4>
-                                    {status_html}
-                                </div>
-                            """, unsafe_allow_html=True)
-                            
-                            if is_running:
-                                if st.button(f"শুরু করুন: {sub}", key=f"btn_sub_{sub}", use_container_width=True, type="primary"):
-                                    selected_card_subject = sub
-                            else:
-                                st.button(f"বন্ধ আছে", key=f"btn_sub_{sub}", use_container_width=True, disabled=True)
+                            # Streamlit-এর বিল্ট-ইন container এবং border ব্যবহার করে নিখুঁত কালার ও বক্স তৈরি করা হয়েছে
+                            with st.container(border=True):
+                                if is_running:
+                                    st.markdown(f"<h4 style='margin: 0 0 4px 0; color: #1e3d59; font-size: 16px; font-weight: bold; text-align: center;'>{sub}</h4>", unsafe_allow_html=True)
+                                    st.markdown("<p style='text-align: center; color: #137333; font-weight: bold; font-size: 13px; margin: 0 0 10px 0;'>🟢 পরীক্ষা আছে</p>", unsafe_allow_html=True)
+                                    if st.button(f"শুরু করুন", key=f"btn_sub_{sub}", use_container_width=True, type="primary"):
+                                        selected_card_subject = sub
+                                else:
+                                    st.markdown(f"<h4 style='margin: 0 0 4px 0; color: #5f6368; font-size: 16px; font-weight: bold; text-align: center;'>{sub}</h4>", unsafe_allow_html=True)
+                                    st.markdown("<p style='text-align: center; color: #64748b; font-weight: bold; font-size: 13px; margin: 0 0 10px 0;'>⚪ পরীক্ষা নেই</p>", unsafe_allow_html=True)
+                                    st.button(f"বন্ধ আছে", key=f"btn_sub_{sub}", use_container_width=True, disabled=True)
                 
                 if selected_card_subject:
                     st.session_state['temp_selected_subject'] = selected_card_subject
