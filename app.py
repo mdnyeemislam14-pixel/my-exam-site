@@ -395,15 +395,26 @@ else:
                 st.info("এখনো কেউ পরীক্ষা দেয়নি।")
         else:
             if not st.session_state['exam_in_progress']:
-                # একই পেজে ১. পরীক্ষার্থীর তথ্য (উপরে) এবং ২. বিষয় নির্বাচন (নিচে)
+                # একই পেজে ১. পরীক্ষার্থীর নাম এবং কনফার্ম বাটন (উপরে) ২. বিষয় নির্বাচন (নিচে)
                 st.subheader("✍️ পরীক্ষার্থীর তথ্য")
                 with st.container(border=True):
-                    student_name_input = st.text_input(
-                        "আপনার পূর্ণ নাম লিখুন:", 
-                        placeholder="এখানে নাম লিখুন", 
-                        value=st.session_state.get('confirmed_student_name', ''),
-                        key="input_student_name_single_page"
-                    )
+                    col_input, col_btn = st.columns([8, 2])
+                    with col_input:
+                        student_name_input = st.text_input(
+                            "আপনার পূর্ণ নাম লিখুন:", 
+                            placeholder="এখানে নাম লিখুন", 
+                            value=st.session_state.get('confirmed_student_name', ''),
+                            key="input_student_name_single_page"
+                        )
+                    with col_btn:
+                        st.write("") # অ্যালাইনমেন্ট ঠিক রাখার জন্য
+                        st.write("")
+                        if st.button("✅ সাবমিট করুন", use_container_width=True, type="secondary"):
+                            if student_name_input.strip():
+                                st.session_state['confirmed_student_name'] = student_name_input.strip()
+                                st.success("নাম সংরক্ষিত হয়েছে!")
+                            else:
+                                st.error("নাম লিখুন!")
 
                 st.write("")
                 st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন")
@@ -423,14 +434,14 @@ else:
                                     st.markdown(f"<h4 style='margin: 0 0 4px 0; color: #1e3d59; font-size: 16px; font-weight: bold; text-align: center;'>{sub}</h4>", unsafe_allow_html=True)
                                     st.markdown("<p style='text-align: center; color: #137333; font-weight: bold; font-size: 13px; margin: 0 0 10px 0;'>🟢 পরীক্ষা আছে</p>", unsafe_allow_html=True)
                                     if st.button(f"শুরু করুন", key=f"btn_sub_{sub}", use_container_width=True, type="primary"):
-                                        if student_name_input.strip():
-                                            st.session_state['confirmed_student_name'] = student_name_input.strip()
+                                        current_typed_name = st.session_state.get('confirmed_student_name', '').strip()
+                                        if current_typed_name:
                                             st.session_state['selected_exam_subject'] = sub
                                             st.session_state['exam_start_time'] = time.time()
                                             st.session_state['exam_in_progress'] = True
                                             st.rerun()
                                         else:
-                                            st.error("⚠️ পরীক্ষা শুরু করতে প্রথমে উপরে আপনার নাম লিখুন!")
+                                            st.error("⚠️ পরীক্ষা শুরু করতে প্রথমে উপরে আপনার নাম লিখে 'সাবমিট করুন' বাটনে চাপ দিন!")
                                 else:
                                     st.markdown(f"<h4 style='margin: 0 0 4px 0; color: #5f6368; font-size: 16px; font-weight: bold; text-align: center;'>{sub}</h4>", unsafe_allow_html=True)
                                     st.markdown("<p style='text-align: center; color: #64748b; font-weight: bold; font-size: 13px; margin: 0 0 10px 0;'>⚪ পরীক্ষা নেই</p>", unsafe_allow_html=True)
