@@ -8,7 +8,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="wide")
 
-# ক্লিন, প্রিমিয়াম সিএসএস এবং ওয়াটারমার্ক (মডার্ন কার্ড ও হোভার ইফেক্টসহ)
+# ক্লিন, প্রিমিয়াম সিএসএস এবং ওয়াটারমার্ক
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -20,7 +20,6 @@ hide_streamlit_style = """
         font-size: 14px !important;
     }
     
-    /* ব্যাকগ্রাউন্ড জলছাপ (Watermark) স্টাইল */
     .stApp::before {
         content: "Job Efforts";
         position: fixed;
@@ -36,7 +35,6 @@ hide_streamlit_style = """
         user-select: none;
     }
     
-    /* মডার্ন কোশ্চেন কার্ড ও হোভার ইফেক্ট */
     .question-card {
         background-color: #ffffff;
         border: 1px solid #e2e8f0;
@@ -44,14 +42,8 @@ hide_streamlit_style = """
         border-radius: 12px;
         margin-bottom: 20px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        transition: all 0.3s ease;
         position: relative;
         z-index: 1;
-    }
-    
-    .question-card:hover {
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-        border-color: #cbd5e1;
     }
     
     .result-box {
@@ -66,26 +58,11 @@ hide_streamlit_style = """
         position: relative;
         z-index: 1;
     }
-    
-    .fixed-timer {
-        position: sticky;
-        top: 0;
-        z-index: 99999;
-        background: linear-gradient(135deg, #ff4b4b, #ff9068);
-        color: white;
-        padding: 10px 15px;
-        border-radius: 8px;
-        text-align: center;
-        font-weight: bold;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-        font-size: 16px;
-    }
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# শীর্ষ ব্যানার (রয়্যাল ব্লু গ্রেডিয়েন্ট কালার সহ)
+# শীর্ষ ব্যানার
 st.markdown("""
     <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #4e54c8, #8f94fb); border-radius: 10px; margin-bottom: 20px; color: white; position: relative; z-index: 1;">
         <h2 style="margin: 0; font-size: 26px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h2>
@@ -102,26 +79,18 @@ ADMIN_PASSWORD = "1234"
 # সেশন স্টেট ইনিশিয়ালাইজেশন
 if 'is_admin_logged_in' not in st.session_state:
     st.session_state['is_admin_logged_in'] = False
-
 if 'confirmed_student_name' not in st.session_state:
     st.session_state['confirmed_student_name'] = ""
-
 if 'exam_submitted' not in st.session_state:
     st.session_state['exam_submitted'] = False
-
 if 'last_result_data' not in st.session_state:
     st.session_state['last_result_data'] = None
-
 if 'selected_exam_subject' not in st.session_state:
     st.session_state['selected_exam_subject'] = ""
-
 if 'exam_in_progress' not in st.session_state:
     st.session_state['exam_in_progress'] = False
 
-
-# ==========================================
-# 🌐 টপ নেভিগেশন বার (Top Navigation Bar)
-# ==========================================
+# টপ নেভিগেশন বার
 col_nav1, col_nav2, col_nav3 = st.columns([6, 3, 3])
 
 with col_nav3:
@@ -146,16 +115,13 @@ with col_nav3:
 
 st.write("---")
 
-# ==========================================
-# মূল পেজ রাউটিং ও কন্টেন্ট
-# ==========================================
 is_admin = st.session_state['is_admin_logged_in']
+all_subjects_master = ["বাংলা", "English", "গণিত", "বিজ্ঞান", "বাংলাদেশের বিষয়াবলি", "আন্তর্জাতিক বিষয়াবলি", "ICT"]
 
 if is_admin:
-    # অ্যাডমিন ট্যাব মেনু
     admin_menu = st.radio(
         "অ্যাডমিন নেভিগেশন:",
-        ["📝 প্রশ্ন আপলোড ও সেটআপ", "📊 সকল শিক্ষার্থীর ফলাফল"],
+        ["📝 বিষয়ভিত্তিক প্রশ্ন আপলোড ও স্ট্যাটাস", "📊 সকল শিক্ষার্থীর ফলাফল"],
         horizontal=True
     )
     st.write("")
@@ -163,7 +129,6 @@ if is_admin:
     if admin_menu == "📊 সকল শিক্ষার্থীর ফলাফল":
         st.subheader("🏆 সকল শিক্ষার্থীর ফলাফল তালিকা")
         st.write("---")
-        
         if os.path.exists(RESULT_FILE):
             res_df = pd.read_csv(RESULT_FILE)
             if not res_df.empty:
@@ -174,18 +139,12 @@ if is_admin:
                         res_df = res_df[res_df['Subject'] == selected_filter_sub]
 
                 st.info(f"মোট খাতা জমা পড়েছে: {len(res_df)} টি")
-                
                 sorted_res = res_df.sort_values(by="Score", ascending=False).reset_index(drop=True)
                 sorted_res.index = sorted_res.index + 1
                 st.dataframe(sorted_res, use_container_width=True)
                 
                 csv_data = sorted_res.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label="📥 মেধা তালিকা ডাউনলোড (CSV)",
-                    data=csv_data,
-                    file_name="merit_list.csv",
-                    mime="text/csv",
-                )
+                st.download_button("📥 মেধা তালিকা ডাউনলোড (CSV)", data=csv_data, file_name="merit_list.csv", mime="text/csv")
                 
                 st.write("---")
                 if st.button("🗑️ সব ফলাফল রিসেট করুন", type="secondary"):
@@ -199,25 +158,36 @@ if is_admin:
             st.warning("কোনো ফলাফল জমা হয়নি।")
 
     else:
-        st.subheader("📚 নতুন প্রশ্ন সংযোজন (অ্যাডমিন প্যানেল)")
+        st.subheader("📚 আলাদা বিষয়ভিত্তিক প্রশ্ন সংযোজন ও স্ট্যাটাস নিয়ন্ত্রণ")
         
-        subject_options = ["বাংলা", "English", "গণিত", "বিজ্ঞান", "বাংলাদেশের বিষয়াবলি", "আন্তর্জাতিক বিষয়াবলি", "ICT"]
-        subject_name = st.selectbox("বিষয়ের নাম:", subject_options)
-        exam_duration = st.number_input("⏱️ সময় (মিনিট):", min_value=1, max_value=300, value=10)
+        saved_q_df = pd.read_csv(QUESTIONS_FILE) if os.path.exists(QUESTIONS_FILE) else pd.DataFrame()
+        active_subjects = saved_q_df['Subject'].unique().tolist() if not saved_q_df.empty and 'Subject' in saved_q_df.columns else []
+
+        st.markdown("##### 📌 সকল বিষয়ের লাইভ স্ট্যাটাস ওভারভিউ:")
+        status_cols = st.columns(len(all_subjects_master))
+        for idx, sub in enumerate(all_subjects_master):
+            with status_cols[idx]:
+                if sub in active_subjects:
+                    st.markdown(f"<div style='background:#e6f4ea; padding:8px; border-radius:5px; text-align:center; font-size:12px;'><b>{sub}</b><br>🟢 চলছে</div>", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"<div style='background:#f1f3f4; padding:8px; border-radius:5px; text-align:center; font-size:12px;'><b>{sub}</b><br>⚪ বন্ধ</div>", unsafe_allow_html=True)
+        
+        st.write("---")
+        subject_name = st.selectbox("বিষয় নির্বাচন করুন:", all_subjects_master)
+        exam_duration = st.number_input("⏱️ পরীক্ষার সময় (মিনিট):", min_value=1, max_value=300, value=10)
         
         st.markdown("---")
-        input_mode = st.radio("পদ্ধতি:", ["টেক্সট পেস্ট (Easy Paste)", "ফাইল আপলোড"], key="admin_input_mode", horizontal=True)
+        input_mode = st.radio("ইনপুট পদ্ধতি:", ["টেক্সট পেস্ট (Easy Paste)", "ফাইল আপলোড (এক্সেল/সিএসভি)"], key="admin_input_mode", horizontal=True)
 
         if input_mode == "টেক্সট পেস্ট (Easy Paste)":
             pasted_text = st.text_area("প্রশ্ন পেস্ট করুন:", height=200, placeholder="১. প্রশ্ন...\nক) ...\nখ) ...\nগ) ...\nঘ) ...\nউত্তর: ক")
             
-            if st.button("📌 সেভ করুন"):
+            if st.button("📌 এই বিষয়ের প্রশ্ন সেভ করুন (স্ট্যাটাস 'চলছে' হবে)"):
                 if not pasted_text:
                     st.error("⚠️ প্রশ্ন দিন।")
                 else:
                     parsed_questions = []
                     blocks = pasted_text.strip().split('\n\n')
-                    
                     for block in blocks:
                         lines = [line.strip() for line in block.split('\n') if line.strip()]
                         if len(lines) >= 5:
@@ -260,74 +230,38 @@ if is_admin:
                         else:
                             final_conf = config_df
                         final_conf.to_csv(CONFIG_FILE, index=False)
-                        st.success("✅ সফলভাবে সেভ হয়েছে!")
+                        st.success(f"✅ '{subject_name}' এর জন্য সফলভাবে সেভ হয়েছে এবং এখন এটি লাইভ (🟢 চলছে)!")
+                        st.rerun()
 
         else:
             uploaded_file = st.file_uploader("ফাইল আপলোড (xlsx/csv):", type=["xlsx", "csv"], key="admin_file_uploader_main")
             if uploaded_file is not None:
                 try:
                     raw_df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
-                    
                     column_ranges = {
-                        "বাংলা (A-F)": (0, 6),
-                        "English (G-L)": (6, 12),
-                        "গণিত (M-R)": (12, 18),
-                        "বিজ্ঞান (S-X)": (18, 24),
-                        "বাংলাদেশ (Y-AD)": (24, 30),
-                        "আন্তর্জাতিক (AE-AJ)": (30, 36),
-                        "ICT (AK-AP)": (36, 42)
+                        "বাংলা (A-F)": (0, 6), "English (G-L)": (6, 12), "গণিত (M-R)": (12, 18),
+                        "বিজ্ঞান (S-X)": (18, 24), "বাংলাদেশ (Y-AD)": (24, 30), "আন্তর্জাতিক (AE-AJ)": (30, 36), "ICT (AK-AP)": (36, 42)
                     }
-                    
-                    selected_range_name = st.selectbox("কলাম রেঞ্জ সিলেক্ট করুন:", options=list(column_ranges.keys()), key="admin_col_range_select")
+                    selected_range_name = st.selectbox("ফাইলের কলাম রেঞ্জ সিলেক্ট করুন:", options=list(column_ranges.keys()), key="admin_col_range_select")
                     start_idx, end_idx = column_ranges[selected_range_name]
                     
                     if end_idx <= len(raw_df.columns):
                         sub_df = raw_df.iloc[:, start_idx:end_idx].copy()
                         sub_df.columns = ['Question', 'Option_A', 'Option_B', 'Option_C', 'Option_D', 'Correct_Answer']
                         sub_df = sub_df.dropna(subset=['Question']).reset_index(drop=True)
-                        if 'Explanation' not in sub_df.columns: 
-                            sub_df['Explanation'] = 'ব্যাখ্যা নেই।'
-                        else:
-                            sub_df['Explanation'] = sub_df['Explanation'].fillna('ব্যাখ্যা নেই।')
+                        sub_df['Explanation'] = sub_df.get('Explanation', 'ব্যাখ্যা নেই।').fillna('ব্যাখ্যা নেই।')
                         
-                        st.write(f"🔍 ফাইল থেকে মোট প্রশ্ন পাওয়া গেছে: {len(sub_df)}টি")
+                        st.write(f"🔍 এই কলাম রেঞ্জ থেকে মোট প্রশ্ন পাওয়া গেছে: {len(sub_df)}টি")
                         
-                        upload_sub_mode = st.radio(
-                            "আপলোড করার পদ্ধতি বেছে নিন:",
-                            ["সব প্রশ্ন একসাথে (Bulk Import)", "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই", "একটি একটি করে দেখে সিলেক্ট করুন (Manual)"],
-                            horizontal=True,
-                            key="admin_upload_sub_mode_radio"
-                        )
-                        
-                        questions_to_save = pd.DataFrame()
-                        
-                        if upload_sub_mode == "সব প্রশ্ন একসাথে (Bulk Import)":
-                            questions_to_save = sub_df
-                            
-                        elif upload_sub_mode == "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই":
-                            sample_size = st.number_input("কতটি প্রশ্ন রেন্ডমলি নিতে চান?", min_value=1, max_value=len(sub_df), value=min(10, len(sub_df)), key="admin_random_sample_size")
-                            questions_to_save = sub_df.sample(n=sample_size).reset_index(drop=True)
-                            st.success(f"✨ স্বয়ংক্রিয়ভাবে {sample_size}টি প্রশ্ন বাছাই করা হয়েছে!")
-                            
-                        else:
-                            st.markdown("---")
-                            st.markdown("### 🔍 ম্যানুয়াল প্রশ্ন সিলেকশন প্রিভিউ")
-                            selected_indices = []
-                            for idx, row in sub_df.iterrows():
-                                if st.checkbox(f"প্রশ্ন {idx+1}: {str(row['Question'])[:50]}...", value=True, key=f"chk_q_{subject_name}_{idx}"):
-                                    selected_indices.append(idx)
-                            questions_to_save = sub_df.loc[selected_indices].reset_index(drop=True)
-
-                        if st.button("📌 ফাইল থেকে সেভ করুন", key="admin_save_from_file_btn"):
-                            if not questions_to_save.empty:
-                                questions_to_save['Subject'] = subject_name
+                        if st.button("📌 ফাইল থেকে এই বিষয়ের প্রশ্ন সেভ করুন", key="admin_save_from_file_btn"):
+                            if not sub_df.empty:
+                                sub_df['Subject'] = subject_name
                                 if os.path.exists(QUESTIONS_FILE):
                                     existing_q_df = pd.read_csv(QUESTIONS_FILE)
                                     existing_q_df = existing_q_df[existing_q_df['Subject'] != subject_name]
-                                    final_q_df = pd.concat([existing_q_df, questions_to_save], ignore_index=True)
+                                    final_q_df = pd.concat([existing_q_df, sub_df], ignore_index=True)
                                 else:
-                                    final_q_df = questions_to_save
-                                
+                                    final_q_df = sub_df
                                 final_q_df.to_csv(QUESTIONS_FILE, index=False)
                                 
                                 config_df = pd.DataFrame([{"Subject": subject_name, "Duration": exam_duration}])
@@ -338,42 +272,16 @@ if is_admin:
                                 else:
                                     final_conf = config_df
                                 final_conf.to_csv(CONFIG_FILE, index=False)
-                                
-                                st.success("✅ ফাইল থেকে সফলভাবে সেভ হয়েছে!")
+                                st.success(f"✅ '{subject_name}' এর ফাইল ডাটা সেভ হয়েছে এবং স্ট্যাটাস 'চলছে' হয়েছে!")
+                                st.rerun()
                             else:
-                                st.error("⚠️ কোনো প্রশ্ন সিলেক্ট করা হয়নি।")
+                                st.error("⚠️ কোনো প্রশ্ন পাওয়া যায়নি।")
                     else:
-                        st.error("⚠️ আপনার ফাইলের কলাম সংখ্যা নির্ধারিত রেঞ্জের চেয়ে কম। সঠিক ফাইল বা কলাম রেঞ্জ নির্বাচন করুন।")
+                        st.error("⚠️ ফাইলের কলাম সংখ্যা কম।")
                 except Exception as e:
                     st.error(f"ত্রুটি: {e}")
 
-        st.write("---")
-        st.subheader("📂 সংরক্ষিত বিষয়সমূহ (প্রশ্ন প্রিভিউ সহ)")
-        if os.path.exists(QUESTIONS_FILE):
-            q_check_df = pd.read_csv(QUESTIONS_FILE)
-            if not q_check_df.empty and 'Subject' in q_check_df.columns:
-                for sub in q_check_df['Subject'].unique().tolist():
-                    sub_q_df = q_check_df[q_check_df['Subject'] == sub].reset_index(drop=True)
-                    count = len(sub_q_df)
-                    with st.expander(f"📁 {sub} (প্রশ্ন: {count}টি)"):
-                        for i, q_row in sub_q_df.iterrows():
-                            st.markdown(f"""
-                                <div style="background-color: #fcfcfc; border: 1px solid #e0e0e0; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
-                                    <strong>প্রশ্ন {i+1}: {q_row['Question']}</strong><br>
-                                    • {q_row['Option_A']}<br>
-                                    • {q_row['Option_B']}<br>
-                                    • {q_row['Option_C']}<br>
-                                    • {q_row['Option_D']}<br>
-                                    <span style="color: green; font-weight: bold;">সঠিক উত্তর: {q_row['Correct_Answer']}</span>
-                                </div>
-                            """, unsafe_allow_html=True)
-                        
-                        if st.button(f"❌ '{sub}' এর সব প্রশ্ন মুছুন", key=f"del_{sub}"):
-                            q_check_df[q_check_df['Subject'] != sub].to_csv(QUESTIONS_FILE, index=False)
-                            st.rerun()
-
 else:
-    # শিক্ষার্থী নেভিগেশন (যদি পরীক্ষা চলাকালীন না হয়)
     if not st.session_state['exam_in_progress']:
         student_menu = st.radio(
             "নেভিগেশন মেনু:",
@@ -385,290 +293,236 @@ else:
         student_menu = "📝 পরীক্ষা দিন"
 
     all_q_df = pd.read_csv(QUESTIONS_FILE) if os.path.exists(QUESTIONS_FILE) else pd.DataFrame()
+    active_subjects = all_q_df['Subject'].unique().tolist() if not all_q_df.empty and 'Subject' in all_q_df.columns else []
 
-    if not all_q_df.empty and 'Subject' in all_q_df.columns:
-        available_subjects = all_q_df['Subject'].unique().tolist()
-        
-        if st.session_state['exam_submitted']:
-            res_info = st.session_state['last_result_data']
-            if res_info:
-                if st.button("⬅️ নতুন পরীক্ষা / হোম", type="secondary"):
-                    st.session_state['exam_submitted'] = False
-                    st.session_state['confirmed_student_name'] = ""
-                    st.session_state['selected_exam_subject'] = ""
-                    st.session_state['exam_in_progress'] = False
-                    st.session_state['last_result_data'] = None
-                    st.rerun()
+    if st.session_state['exam_submitted']:
+        res_info = st.session_state['last_result_data']
+        if res_info:
+            if st.button("⬅️ নতুন পরীক্ষা / হোম", type="secondary"):
+                st.session_state['exam_submitted'] = False
+                st.session_state['confirmed_student_name'] = ""
+                st.session_state['selected_exam_subject'] = ""
+                st.session_state['exam_in_progress'] = False
+                st.session_state['last_result_data'] = None
+                st.rerun()
 
+            st.markdown(f"""
+                <div class="result-box">
+                    <h2>🎉 অভিনন্দন, {res_info['student_name']}!</h2>
+                    <p style="font-size: 18px; margin: 5px 0;">বিষয়: {res_info['subject']}</p>
+                    <h1 style="font-size: 32px; margin: 10px 0;">প্রাপ্ত নম্বর: {res_info['score']} / {res_info['total']}</h1>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            st.subheader("📊 বিস্তারিত উত্তরমালা")
+            st.write("---")
+            for i, row in res_info['active_df'].iterrows():
+                ans = res_info['user_answers'].get(i)
+                raw_correct = str(row['Correct_Answer']).strip()
+                opts = [str(row['Option_A']).strip(), str(row['Option_B']).strip(), str(row['Option_C']).strip(), str(row['Option_D']).strip()]
+                correct_val = raw_correct
+                for opt in opts:
+                    if raw_correct.lower() in opt.lower():
+                        correct_val = opt
+                        break
+
+                options_html = ""
+                for opt in opts:
+                    is_correct = (opt == correct_val or raw_correct.lower() in opt.lower())
+                    is_user = (ans and str(ans).strip() == opt)
+                    if is_correct and is_user:
+                        options_html += f"<div style='color: green; font-weight: bold;'>✅ {opt} (আপনার সঠিক উত্তর)</div>"
+                    elif is_correct:
+                        options_html += f"<div style='color: green; font-weight: bold;'>✅ {opt} (সঠিক উত্তর)</div>"
+                    elif is_user:
+                        options_html += f"<div style='color: red; font-weight: bold;'>❌ {opt} (আপনার ভুল উত্তর)</div>"
+                    else:
+                        options_html += f"<div style='color: #555;'>• {opt}</div>"
+                
                 st.markdown(f"""
-                    <div class="result-box">
-                        <h2>🎉 অভিনন্দন, {res_info['student_name']}!</h2>
-                        <p style="font-size: 18px; margin: 5px 0;">বিষয়: {res_info['subject']}</p>
-                        <h1 style="font-size: 32px; margin: 10px 0;">প্রাপ্ত নম্বর: {res_info['score']} / {res_info['total']}</h1>
+                    <div class="question-card">
+                        <strong>প্রশ্ন {i+1}: {str(row['Question'])}</strong><br><br>
+                        {options_html}
+                        <hr style="margin: 8px 0;">
+                        <small>💡 ব্যাখ্যা: {row['Explanation']}</small>
                     </div>
                 """, unsafe_allow_html=True)
+    else:
+        if student_menu == "🏆 ক্লাসের মেধা তালিকা (Leaderboard)":
+            st.subheader("🏆 ক্লাসের লাইভ মেধা তালিকা")
+            st.write("---")
+            if os.path.exists(RESULT_FILE):
+                res_df = pd.read_csv(RESULT_FILE)
+                if not res_df.empty:
+                    if 'Subject' in res_df.columns:
+                        subjects_list = res_df['Subject'].unique().tolist()
+                        leaderboard_sub = st.selectbox("বিষয় সিলেক্ট করুন:", subjects_list, key="lb_sub")
+                        res_df = res_df[res_df['Subject'] == leaderboard_sub]
+                    sorted_res = res_df.sort_values(by="Score", ascending=False).reset_index(drop=True)
+                    sorted_res.index = sorted_res.index + 1
+                    st.dataframe(sorted_res, use_container_width=True)
+                else:
+                    st.info("এখনো কোনো ফলাফল প্রকাশিত হয়নি।")
+            else:
+                st.info("এখনো কেউ পরীক্ষা দেয়নি।")
+        else:
+            if not st.session_state['exam_in_progress']:
+                st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন")
                 
-                st.subheader("📊 বিস্তারিত উত্তরমালা (৪ অপশনসহ সঠিক ও ভুল মার্কিং)")
+                subject_display_list = []
+                for sub in all_subjects_master:
+                    if sub in active_subjects:
+                        subject_display_list.append(f"{sub} — 🟢 চলছে")
+                    else:
+                        subject_display_list.append(f"{sub} — ⚪ বন্ধ")
+                
+                selected_display = st.selectbox("বিষয় নির্বাচন করুন:", subject_display_list)
+                clean_selected_subject = selected_display.split(" — ")[0]
+                is_running = clean_selected_subject in active_subjects
+                
                 st.write("---")
                 
-                for i, row in res_info['active_df'].iterrows():
-                    ans = res_info['user_answers'].get(i)
-                    raw_correct = str(row['Correct_Answer']).strip()
-                    raw_correct_lower = raw_correct.lower()
-                    
-                    opts = [str(row['Option_A']).strip(), str(row['Option_B']).strip(), str(row['Option_C']).strip(), str(row['Option_D']).strip()]
-                    
-                    correct_val = ""
-                    for opt in opts:
-                        opt_lower = opt.lower()
-                        if raw_correct_lower in ['ক', 'a'] and (opt.startswith('ক') or opt_lower.startswith('a.')):
-                            correct_val = opt
-                        elif raw_correct_lower in ['খ', 'b'] and (opt.startswith('খ') or opt_lower.startswith('b.')):
-                            correct_val = opt
-                        elif raw_correct_lower in ['গ', 'c'] and (opt.startswith('গ') or opt_lower.startswith('c.')):
-                            correct_val = opt
-                        elif raw_correct_lower in ['ঘ', 'd'] and (opt.startswith('ঘ') or opt_lower.startswith('d.')):
-                            correct_val = opt
-                        elif raw_correct_lower == opt_lower or raw_correct_lower in opt_lower or opt_lower in raw_correct_lower:
-                            correct_val = opt
-                    
-                    if not correct_val:
-                        correct_val = raw_correct
+                if is_running:
+                    df = all_q_df[all_q_df['Subject'] == clean_selected_subject].reset_index(drop=True)
+                    duration = 10
+                    if os.path.exists(CONFIG_FILE):
+                        conf_df = pd.read_csv(CONFIG_FILE)
+                        match_conf = conf_df[conf_df['Subject'] == clean_selected_subject]
+                        if not match_conf.empty: duration = int(match_conf.iloc[0]['Duration'])
 
-                    options_html = ""
-                    for opt in opts:
-                        opt_lower = opt.lower()
-                        c_val_lower = correct_val.lower()
-                        
-                        is_correct_option = (
-                            opt == correct_val or 
-                            opt_lower == c_val_lower or 
-                            c_val_lower in opt_lower or 
-                            opt_lower in c_val_lower or
-                            (raw_correct_lower in ['ক', 'a'] and (opt.startswith('ক') or opt_lower.startswith('a.'))) or
-                            (raw_correct_lower in ['খ', 'b'] and (opt.startswith('খ') or opt_lower.startswith('b.'))) or
-                            (raw_correct_lower in ['গ', 'c'] and (opt.startswith('গ') or opt_lower.startswith('c.'))) or
-                            (raw_correct_lower in ['ঘ', 'd'] and (opt.startswith('ঘ') or opt_lower.startswith('d.')))
-                        )
-                        
-                        is_user_choice = (ans and str(ans).strip() == opt)
-                        
-                        if is_correct_option and is_user_choice:
-                            options_html += f"<div style='color: green; font-weight: bold; margin: 4px 0;'>✅ {opt} (আপনার সঠিক উত্তর)</div>"
-                        elif is_correct_option:
-                            options_html += f"<div style='color: green; font-weight: bold; margin: 4px 0;'>✅ {opt} (সঠিক উত্তর)</div>"
-                        elif is_user_choice and not is_correct_option:
-                            options_html += f"<div style='color: red; font-weight: bold; margin: 4px 0;'>❌ {opt} (আপনার ভুল উত্তর)</div>"
-                        else:
-                            options_html += f"<div style='color: #555; margin: 4px 0;'>• {opt}</div>"
+                    st.success(f"🟢 স্ট্যাটাস: এই বিষয়ের পরীক্ষা লাইভ চলছে!")
+                    st.info(f"📌 বিষয়: {clean_selected_subject} | ⏱️ সময়: {duration} মিনিট | 🎯 প্রশ্ন: {len(df)}টি")
                     
+                    with st.container(border=True):
+                        st.markdown("#### ✍️ পরীক্ষার্থীর তথ্য")
+                        student_name = st.text_input("আপনার পূর্ণ নাম লিখুন:", placeholder="এখানে নাম লিখুন", key="input_student_name")
+                        
+                        if st.button("➔ পরীক্ষা শুরু করুন", type="primary"):
+                            if student_name.strip():
+                                st.session_state['confirmed_student_name'] = student_name.strip()
+                                st.session_state['selected_exam_subject'] = clean_selected_subject
+                                st.session_state['exam_start_time'] = time.time()
+                                st.session_state['exam_in_progress'] = True
+                                st.rerun()
+                            else:
+                                st.error("⚠️ নাম লিখুন।")
+                else:
+                    st.warning(f"⚪ স্ট্যাটাস: **{clean_selected_subject}** বিষয়ের পরীক্ষা এই মুহূর্তে **বন্ধ** রয়েছে। কারণ এই বিষয়ে কোনো প্রশ্ন অ্যাড করা হয়নি।")
+            else:
+                selected_subject = st.session_state.get('selected_exam_subject', active_subjects[0])
+                df = all_q_df[all_q_df['Subject'] == selected_subject].reset_index(drop=True)
+                
+                duration = 10
+                if os.path.exists(CONFIG_FILE):
+                    conf_df = pd.read_csv(CONFIG_FILE)
+                    match_conf = conf_df[conf_df['Subject'] == selected_subject]
+                    if not match_conf.empty: duration = int(match_conf.iloc[0]['Duration'])
+                
+                current_student = st.session_state['confirmed_student_name']
+                active_df = df.copy()
+                total_seconds = duration * 60
+                
+                if 'exam_start_time' not in st.session_state or st.session_state.get('current_sub') != selected_subject:
+                    st.session_state['exam_start_time'] = time.time()
+                    st.session_state['current_sub'] = selected_subject
+
+                elapsed_seconds = int(time.time() - st.session_state['exam_start_time'])
+                remaining_seconds = max(0, total_seconds - elapsed_seconds)
+                
+                timer_html = f"""
+                    <div style="background: linear-gradient(135deg, #ff4b4b, #ff9068); color: white; padding: 10px 15px; border-radius: 8px; text-align: center; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; font-size: 16px;">
+                        ⏳ বাকি সময়: <span id="time-display">--:--</span>
+                    </div>
+                    <script>
+                        var remainingSecs = {remaining_seconds};
+                        function updateTimer() {{
+                            var m = Math.floor(remainingSecs / 60);
+                            var s = remainingSecs % 60;
+                            var displayM = m < 10 ? "0" + m : m;
+                            var displayS = s < 10 ? "0" + s : s;
+                            var elem = document.getElementById("time-display");
+                            if (elem) {{ elem.innerHTML = displayM + " মিনিট " + displayS + " সেকেন্ড"; }}
+                            if (remainingSecs <= 0) {{
+                                clearInterval(timerInterval);
+                                const submitButtons = window.parent.document.querySelectorAll('button');
+                                for (let btn of submitButtons) {{
+                                    if (btn.innerText.includes('পরীক্ষা জমা দিন')) {{ btn.click(); break; }}
+                                }}
+                            }}
+                            remainingSecs--;
+                        }}
+                        updateTimer();
+                        var timerInterval = setInterval(updateTimer, 1000);
+                    </script>
+                """
+                components.html(timer_html, height=60)
+                
+                st.success(f"পরীক্ষার্থী: **{current_student}** ({selected_subject})")
+                st.write("---")
+                
+                user_answers = {}
+                for i, row in active_df.iterrows():
+                    options_list = [str(row['Option_A']), str(row['Option_B']), str(row['Option_C']), str(row['Option_D'])]
                     st.markdown(f"""
                         <div class="question-card">
-                            <strong>প্রশ্ন {i+1}: {str(row['Question'])}</strong><br><br>
-                            {options_html}
-                            <hr style="margin: 8px 0;">
-                            <small>💡 ব্যাখ্যা: {row['Explanation']}</small>
+                            <strong>প্রশ্ন {i+1}: {str(row['Question'])}</strong>
                         </div>
                     """, unsafe_allow_html=True)
-        else:
-            if student_menu == "🏆 ক্লাসের মেধা তালিকা (Leaderboard)":
-                st.subheader("🏆 ক্লাসের লাইভ মেধা তালিকা")
+                    
+                    user_answers[i] = st.radio(
+                        f"উত্তর নির্বাচন করুন (প্রশ্ন {i+1}):", 
+                        options_list, 
+                        index=None, 
+                        key=f"q_{i}_{selected_subject}",
+                        label_visibility="collapsed"
+                    )
+                
+                answered_count = sum(1 for i in range(len(active_df)) if user_answers.get(i) is not None)
+                progress_percentage = answered_count / len(active_df)
+                
+                st.markdown("##### 📊 পরীক্ষার প্রোগ্রেস")
+                st.progress(progress_percentage)
+                st.write(f"উত্তর দিয়েছেন: **{answered_count}** / **{len(active_df)}** টি প্রশ্ন")
                 st.write("---")
                 
-                if os.path.exists(RESULT_FILE):
-                    res_df = pd.read_csv(RESULT_FILE)
-                    if not res_df.empty:
-                        if 'Subject' in res_df.columns:
-                            subjects_list = res_df['Subject'].unique().tolist()
-                            leaderboard_sub = st.selectbox("বিষয় সিলেক্ট করুন:", subjects_list, key="lb_sub")
-                            res_df = res_df[res_df['Subject'] == leaderboard_sub]
-                        
-                        sorted_res = res_df.sort_values(by="Score", ascending=False).reset_index(drop=True)
-                        sorted_res.index = sorted_res.index + 1
-                        st.dataframe(sorted_res, use_container_width=True)
-                    else:
-                        st.info("এখনো কোনো ফলাফল প্রকাশিত হয়নি।")
-                else:
-                    st.info("এখনো কেউ পরীক্ষা দেয়নি।")
-            else:
-                if not st.session_state['exam_in_progress']:
-                    st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন")
-                    selected_subject = st.selectbox("বিষয়:", available_subjects)
-                    st.write("---")
-                    
-                    df = all_q_df[all_q_df['Subject'] == selected_subject].reset_index(drop=True)
-                    duration = 10
-                    if os.path.exists(CONFIG_FILE):
-                        conf_df = pd.read_csv(CONFIG_FILE)
-                        match_conf = conf_df[conf_df['Subject'] == selected_subject]
-                        if not match_conf.empty: duration = int(match_conf.iloc[0]['Duration'])
-
-                    if not df.empty:
-                        st.info(f"📌 বিষয়: {selected_subject} | ⏱️ সময়: {duration} মিনিট | 🎯 প্রশ্ন: {len(df)}টি")
-                        
-                        with st.container(border=True):
-                            st.markdown("#### ✍️ পরীক্ষার্থীর তথ্য")
-                            student_name = st.text_input("আপনার পূর্ণ নাম লিখুন:", placeholder="এখানে নাম লিখুন", key="input_student_name")
-                            
-                            if st.button("➔ পরীক্ষা শুরু করুন", type="primary"):
-                                if student_name.strip():
-                                    st.session_state['confirmed_student_name'] = student_name.strip()
-                                    st.session_state['selected_exam_subject'] = selected_subject
-                                    st.session_state['exam_start_time'] = time.time()
-                                    st.session_state['exam_in_progress'] = True
-                                    st.rerun()
-                                else:
-                                    st.error("⚠️ নাম লিখুন।")
-                else:
-                    selected_subject = st.session_state.get('selected_exam_subject', available_subjects[0])
-                    df = all_q_df[all_q_df['Subject'] == selected_subject].reset_index(drop=True)
-                    
-                    duration = 10
-                    if os.path.exists(CONFIG_FILE):
-                        conf_df = pd.read_csv(CONFIG_FILE)
-                        match_conf = conf_df[conf_df['Subject'] == selected_subject]
-                        if not match_conf.empty: duration = int(match_conf.iloc[0]['Duration'])
-                    
-                    current_student = st.session_state['confirmed_student_name']
-                    active_df = df.copy()
-                    total_seconds = duration * 60
-                    
-                    if 'exam_start_time' not in st.session_state or st.session_state.get('current_sub') != selected_subject:
-                        st.session_state['exam_start_time'] = time.time()
-                        st.session_state['current_sub'] = selected_subject
-
-                    elapsed_seconds = int(time.time() - st.session_state['exam_start_time'])
-                    remaining_seconds = max(0, total_seconds - elapsed_seconds)
-                    
-                    timer_html = f"""
-                        <div id="live-timer" style="
-                            background: linear-gradient(135deg, #ff4b4b, #ff9068);
-                            color: white;
-                            padding: 10px 15px;
-                            border-radius: 8px;
-                            text-align: center;
-                            font-weight: bold;
-                            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                            margin-bottom: 20px;
-                            font-size: 16px;
-                        ">
-                            ⏳ বাকি সময়: <span id="time-display">--:--</span>
-                        </div>
-                        <script>
-                            var remainingSecs = {remaining_seconds};
-                            function updateTimer() {{
-                                var m = Math.floor(remainingSecs / 60);
-                                var s = remainingSecs % 60;
-                                var displayM = m < 10 ? "0" + m : m;
-                                var displayS = s < 10 ? "0" + s : s;
-                                
-                                var elem = document.getElementById("time-display");
-                                if (elem) {{
-                                    elem.innerHTML = displayM + " মিনিট " + displayS + " সেকেন্ড";
-                                }}
-                                
-                                if (remainingSecs <= 0) {{
-                                    clearInterval(timerInterval);
-                                    const submitButtons = window.parent.document.querySelectorAll('button');
-                                    for (let btn of submitButtons) {{
-                                        if (btn.innerText.includes('পরীক্ষা জমা দিন')) {{
-                                            btn.click();
-                                            break;
-                                        }}
-                                    }}
-                                }}
-                                remainingSecs--;
-                            }}
-                            updateTimer();
-                            var timerInterval = setInterval(updateTimer, 1000);
-                        </script>
-                    """
-                    components.html(timer_html, height=60)
-                    
-                    st.success(f"পরীক্ষার্থী: **{current_student}** ({selected_subject})")
-                    st.write("---")
-                    
-                    user_answers = {}
-                    
+                if st.button("🚀 পরীক্ষা জমা দিন", type="primary", use_container_width=True):
+                    score = 0
                     for i, row in active_df.iterrows():
-                        options_list = [str(row['Option_A']), str(row['Option_B']), str(row['Option_C']), str(row['Option_D'])]
-                        
-                        st.markdown(f"""
-                            <div class="question-card">
-                                <strong>প্রশ্ন {i+1}: {str(row['Question'])}</strong>
-                            </div>
-                        """, unsafe_allow_html=True)
-                        
-                        user_answers[i] = st.radio(
-                            f"উত্তর নির্বাচন করুন (প্রশ্ন {i+1}):", 
-                            options_list, 
-                            index=None, 
-                            key=f"q_{i}_{selected_subject}",
-                            label_visibility="collapsed"
-                        )
-                    
-                    # প্রোগ্রেস বার এবং কোশ্চেন প্যালেট সংযোজন
-                    answered_count = sum(1 for i in range(len(active_df)) if user_answers.get(i) is not None)
-                    progress_percentage = answered_count / len(active_df)
-                    
-                    st.markdown("##### 📊 পরীক্ষার প্রোগ্রেস")
-                    st.progress(progress_percentage)
-                    st.write(f"উত্তর দিয়েছেন: **{answered_count}** / **{len(active_df)}** টি প্রশ্ন")
-                    st.write("---")
-                    
-                    if st.button("🚀 পরীক্ষা জমা দিন", type="primary", use_container_width=True):
-                        score = 0
-                        for i, row in active_df.iterrows():
-                            ans = user_answers.get(i)
-                            if ans is not None:
-                                raw_correct = str(row['Correct_Answer']).strip()
-                                raw_correct_lower = raw_correct.lower()
-                                opts = [str(row['Option_A']).strip(), str(row['Option_B']).strip(), str(row['Option_C']).strip(), str(row['Option_D']).strip()]
-                                
-                                correct_val = ""
-                                for opt in opts:
-                                    opt_lower = opt.lower()
-                                    if raw_correct_lower in ['ক', 'a'] and (opt.startswith('ক') or opt_lower.startswith('a.')):
-                                        correct_val = opt
-                                    elif raw_correct_lower in ['খ', 'b'] and (opt.startswith('খ') or opt_lower.startswith('b.')):
-                                        correct_val = opt
-                                    elif raw_correct_lower in ['গ', 'c'] and (opt.startswith('গ') or opt_lower.startswith('c.')):
-                                        correct_val = opt
-                                    elif raw_correct_lower in ['ঘ', 'd'] and (opt.startswith('ঘ') or opt_lower.startswith('d.')):
-                                        correct_val = opt
-                                    elif raw_correct_lower == opt_lower or raw_correct_lower in opt_lower or opt_lower in raw_correct_lower:
-                                        correct_val = opt
-                                if not correct_val:
-                                    correct_val = raw_correct
-                                
-                                if str(ans).strip() == correct_val:
-                                    score += 1
+                        ans = user_answers.get(i)
+                        if ans is not None:
+                            raw_correct = str(row['Correct_Answer']).strip()
+                            opts = [str(row['Option_A']).strip(), str(row['Option_B']).strip(), str(row['Option_C']).strip(), str(row['Option_D']).strip()]
+                            correct_val = raw_correct
+                            for opt in opts:
+                                if raw_correct.lower() in opt.lower():
+                                    correct_val = opt
+                                    break
+                            if str(ans).strip() == correct_val:
+                                score += 1
 
-                        new_result = pd.DataFrame([{
-                            "Name": current_student,
-                            "Subject": selected_subject,
-                            "Score": score,
-                            "Total": len(active_df),
-                            "Date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        }])
-                        
-                        if os.path.exists(RESULT_FILE):
-                            res_history = pd.read_csv(RESULT_FILE)
-                            final_res = pd.concat([res_history, new_result], ignore_index=True)
-                        else:
-                            final_res = new_result
-                        final_res.to_csv(RESULT_FILE, index=False)
-                        
-                        st.session_state['last_result_data'] = {
-                            "student_name": current_student,
-                            "subject": selected_subject,
-                            "score": score,
-                            "total": len(active_df),
-                            "active_df": active_df,
-                            "user_answers": user_answers
-                        }
-                        st.session_state['exam_submitted'] = True
-                        st.session_state['exam_in_progress'] = False
-                        st.rerun()
-    else:
-        st.warning("⚠️ বর্তমানে কোনো প্রশ্ন সংরক্ষিত নেই। অ্যাডমিন প্যানেল থেকে প্রশ্ন যুক্ত করুন।")
+                    new_result = pd.DataFrame([{
+                        "Name": current_student,
+                        "Subject": selected_subject,
+                        "Score": score,
+                        "Total": len(active_df),
+                        "Date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    }])
+                    
+                    if os.path.exists(RESULT_FILE):
+                        res_history = pd.read_csv(RESULT_FILE)
+                        final_res = pd.concat([res_history, new_result], ignore_index=True)
+                    else:
+                        final_res = new_result
+                    final_res.to_csv(RESULT_FILE, index=False)
+                    
+                    st.session_state['last_result_data'] = {
+                        "student_name": current_student,
+                        "subject": selected_subject,
+                        "score": score,
+                        "total": len(active_df),
+                        "active_df": active_df,
+                        "user_answers": user_answers
+                    }
+                    st.session_state['exam_submitted'] = True
+                    st.session_state['exam_in_progress'] = False
+                    st.rerun()
