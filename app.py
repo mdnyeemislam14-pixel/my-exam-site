@@ -8,7 +8,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="wide")
 
-# ক্লিন, প্রিমিয়াম সিএসএস এবং ওয়াটারমার্ক (মডার্ন কার্ড ও হোভার ইফেক্টসহ)
+# ক্লিন, প্রিমিয়াম সিএসএস এবং ওয়াটারমার্ক (মডার্ন কার্ড ও হোভার ইফেক্টসহ)
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -373,7 +373,7 @@ if is_admin:
                             st.rerun()
 
 else:
-    # শিক্ষার্থী নেভিগেশন (যদি পরীক্ষা চলাকালীন না হয়)
+    # শিক্ষার্থী নেভিগেশন (যদি পরীক্ষা চলাকালীন না হয়)
     if not st.session_state['exam_in_progress']:
         student_menu = st.radio(
             "নেভিগেশন মেনু:",
@@ -540,8 +540,6 @@ else:
                     elapsed_seconds = int(time.time() - st.session_state['exam_start_time'])
                     remaining_seconds = max(0, total_seconds - elapsed_seconds)
                     
-                    timer_placeholder = st.empty()
-                    
                     timer_html = f"""
                         <div id="live-timer" style="
                             background: linear-gradient(135deg, #ff4b4b, #ff9068);
@@ -615,71 +613,62 @@ else:
                     
                     st.markdown("##### 📊 পরীক্ষার প্রোগ্রেস")
                     st.progress(progress_percentage)
-                    st.write(f"উত্তর দিয়েছেন: **{answered_count}** / {len(active_df)} টি প্রশ্ন")
+                    st.write(f"উত্তর দিয়েছেন: **{answered_count}** / **{len(active_df)}** টি প্রশ্ন")
                     st.write("---")
                     
-                    # সাইডবারে কোশ্চেন প্যালেট (Question Palette)
-                    with st.sidebar:
-                        st.markdown("### 🧭 কোশ্চেন প্যালেট")
-                        st.markdown("🟢 উত্তর দেওয়া হয়েছে <br>⚪ উত্তর দেওয়া হয়নি", unsafe_allow_html=True)
-                        st.write("---")
-                        
-                        cols = st.columns(5)
-                        for i in range(len(active_df)):
-                            col_idx = i % 5
-                            is_ans = user_answers.get(i) is not None
-                            btn_label = f"{i+1}"
-                            
-                            with cols[col_idx]:
-                                if is_ans:
-                                    st.button(btn_label, key=f"palette_{i}", help="উত্তর দেওয়া হয়েছে", use_container_width=True, type="primary")
-                                else:
-                                    st.button(btn_label, key=f"palette_{i}", help="বাকি আছে", use_container_width=True)
-                    
-                    if st.button("পরীক্ষা জমা দিন", type="primary") or remaining_seconds <= 0:
+                    if st.button("🚀 পরীক্ষা জমা দিন", type="primary", use_container_width=True):
                         score = 0
                         for i, row in active_df.iterrows():
                             ans = user_answers.get(i)
-                            raw_c = str(row['Correct_Answer']).strip().lower()
-                            opt_a_str = str(row['Option_A']).strip()
-                            opt_b_str = str(row['Option_B']).strip()
-                            opt_c_str = str(row['Option_C']).strip()
-                            opt_d_str = str(row['Option_D']).strip()
-                            
-                            correct_v = opt_a_str
-                            for o in [opt_a_str, opt_b_str, opt_c_str, opt_d_str]:
-                                o_low = o.lower()
-                                if raw_c in ['ক', 'a'] and (o.startswith('ক') or o_low.startswith('a.')): correct_v = o
-                                elif raw_c in ['খ', 'b'] and (o.startswith('খ') or o_low.startswith('b.')): correct_v = o
-                                elif raw_c in ['গ', 'c'] and (o.startswith('গ') or o_low.startswith('c.')): correct_v = o
-                                elif raw_c in ['ঘ', 'd'] and (o.startswith('ঘ') or o_low.startswith('d.')): correct_v = o
-                                elif raw_c == o_low or raw_c in o_low or o_low in raw_c: correct_v = o
+                            if ans is not None:
+                                raw_correct = str(row['Correct_Answer']).strip()
+                                raw_correct_lower = raw_correct.lower()
+                                opts = [str(row['Option_A']).strip(), str(row['Option_B']).strip(), str(row['Option_C']).strip(), str(row['Option_D']).strip()]
+                                
+                                correct_val = ""
+                                for opt in opts:
+                                    opt_lower = opt.lower()
+                                    if raw_correct_lower in ['ক', 'a'] and (opt.startswith('ক') or opt_lower.startswith('a.')):
+                                        correct_val = opt
+                                    elif raw_correct_lower in ['খ', 'b'] and (opt.startswith('খ') or opt_lower.startswith('b.')):
+                                        correct_val = opt
+                                    elif raw_correct_lower in ['গ', 'c'] and (opt.startswith('গ') or opt_lower.startswith('c.')):
+                                        correct_val = opt
+                                    elif raw_correct_lower in ['ঘ', 'd'] and (opt.startswith('ঘ') or opt_lower.startswith('d.')):
+                                        correct_val = opt
+                                    elif raw_correct_lower == opt_lower or raw_correct_lower in opt_lower or opt_lower in raw_correct_lower:
+                                        correct_val = opt
+                                if not correct_val:
+                                    correct_val = raw_correct
+                                
+                                if str(ans).strip() == correct_val:
+                                    score += 1
 
-                            if ans and (str(ans).strip() == correct_v or str(ans).strip().lower() == correct_v.lower()):
-                                score += 1
-
-                        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         new_result = pd.DataFrame([{
-                            "Student Name": current_student, "Subject": selected_subject,
-                            "Score": score, "Total Marks": len(active_df), "Submission Time": current_time
+                            "Name": current_student,
+                            "Subject": selected_subject,
+                            "Score": score,
+                            "Total": len(active_df),
+                            "Date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         }])
                         
                         if os.path.exists(RESULT_FILE):
-                            updated_res = pd.concat([pd.read_csv(RESULT_FILE), new_result], ignore_index=True)
+                            res_history = pd.read_csv(RESULT_FILE)
+                            final_res = pd.concat([res_history, new_result], ignore_index=True)
                         else:
-                            updated_res = new_result
-                        updated_res.to_csv(RESULT_FILE, index=False)
+                            final_res = new_result
+                        final_res.to_csv(RESULT_FILE, index=False)
                         
+                        st.session_state['last_result_data'] = {
+                            "student_name": current_student,
+                            "subject": selected_subject,
+                            "score": score,
+                            "total": len(active_df),
+                            "active_df": active_df,
+                            "user_answers": user_answers
+                        }
                         st.session_state['exam_submitted'] = True
                         st.session_state['exam_in_progress'] = False
-                        st.session_state['last_result_data'] = {
-                            'student_name': current_student,
-                            'subject': selected_subject,
-                            'score': score,
-                            'total': len(active_df),
-                            'active_df': active_df,
-                            'user_answers': user_answers
-                        }
                         st.rerun()
     else:
-        st.info("⚠️ বর্তমানে কোনো পরীক্ষার প্রশ্ন আপলোড করা হয়নি। অ্যাডমিন প্যানেল থেকে প্রশ্ন যুক্ত করুন।")
+        st.warning("⚠️ বর্তমানে কোনো প্রশ্ন সংরক্ষিত নেই। অ্যাডমিন প্যানেল থেকে প্রশ্ন যুক্ত করুন।")
