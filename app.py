@@ -8,7 +8,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="wide")
 
-# ক্লিন, প্রিমিয়াম সিএসএস এবং ওয়াটারমার্ক
+# ক্লিন, প্রিমিয়াম সিএসএস এবং সাবজেক্ট কার্ড ডিজাইন
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -168,7 +168,7 @@ if is_admin:
         for idx, sub in enumerate(all_subjects_master):
             with status_cols[idx]:
                 if sub in active_subjects:
-                    st.markdown(f"<div style='background:#e3eeff; border: 1.5px solid #2563eb; padding:6px; border-radius:6px; text-align:center; font-size:11px;'><b style='color:#1e3d59;'>{sub}</b><br><span style='color:#137333;'>🟢 পরীক্ষা আছে</span></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='background:#f0f4ff; border: 1.5px solid #2563eb; padding:6px; border-radius:6px; text-align:center; font-size:11px;'><b style='color:#1e3d59;'>{sub}</b><br><span style='color:#137333;'>🟢 পরীক্ষা আছে</span></div>", unsafe_allow_html=True)
                 else:
                     st.markdown(f"<div style='background:#f8f9fa; border: 1.5px solid #dadce0; padding:6px; border-radius:6px; text-align:center; font-size:11px;'><b style='color:#5f6368;'>{sub}</b><br><span style='color:#5f6368;'>⚪ পরীক্ষা নেই</span></div>", unsafe_allow_html=True)
         
@@ -370,7 +370,7 @@ else:
                 st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন")
                 st.write("---")
                 
-                # রয়্যাল ব্লু থিম স্টাইলের সাবজেক্ট গ্রিড কার্ড
+                # সম্পূর্ণ কাস্টম HTML গ্রিড কার্ড (রয়্যাল ব্লু বর্ডার ও সফট ব্যাকগ্রাউন্ড সহ ছোট সাইজ)
                 cols_per_row = 3
                 subject_chunks = [all_subjects_master[i:i + cols_per_row] for i in range(0, len(all_subjects_master), cols_per_row)]
                 
@@ -382,26 +382,28 @@ else:
                         with row_cols[idx]:
                             is_running = sub in active_subjects
                             if is_running:
-                                card_bg = "#ffffff"
-                                border_col = "#2563eb"
-                                status_text = "🟢 পরীক্ষা আছে"
-                                text_col = "#137333"
+                                bg_color = "#f0f4ff"
+                                border_color = "#2563eb"
+                                status_html = "<span style='color: #137333; font-weight: bold; font-size: 11px;'>🟢 পরীক্ষা আছে</span>"
+                                btn_disabled = False
                             else:
-                                card_bg = "#fcfcfc"
-                                border_col = "#cbd5e1"
-                                status_text = "⚪ পরীক্ষা নেই"
-                                text_col = "#64748b"
+                                bg_color = "#fcfcfc"
+                                border_color = "#cbd5e1"
+                                status_html = "<span style='color: #64748b; font-weight: bold; font-size: 11px;'>⚪ পরীক্ষা নেই</span>"
+                                btn_disabled = True
                             
                             st.markdown(f"""
-                                <div style="background-color: {card_bg}; border: 2px solid {border_col}; padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 6px; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.08);">
-                                    <h5 style="margin: 0 0 4px 0; color: #1e3d59; font-size: 15px; font-weight: bold;">{sub}</h5>
-                                    <span style="font-size: 11px; font-weight: bold; color: {text_col};">{status_text}</span>
+                                <div style="background-color: {bg_color}; border: 2px solid {border_color}; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 6px; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.05);">
+                                    <h4 style="margin: 0 0 4px 0; color: #1e3d59; font-size: 14px; font-weight: bold;">{sub}</h4>
+                                    {status_html}
                                 </div>
                             """, unsafe_allow_html=True)
                             
                             if is_running:
                                 if st.button(f"শুরু করুন: {sub}", key=f"btn_sub_{sub}", use_container_width=True):
                                     selected_card_subject = sub
+                            else:
+                                st.button(f"বন্ধ আছে", key=f"btn_sub_{sub}", use_container_width=True, disabled=True)
                 
                 if selected_card_subject:
                     st.session_state['temp_selected_subject'] = selected_card_subject
