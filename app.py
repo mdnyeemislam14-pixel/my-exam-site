@@ -249,7 +249,6 @@ if is_admin:
                         sub_df.columns = ['Question', 'Option_A', 'Option_B', 'Option_C', 'Option_D', 'Correct_Answer']
                         sub_df = sub_df.dropna(subset=['Question']).reset_index(drop=True)
                         
-                        # সুরক্ষিত ব্যাখ্যা কলাম হ্যান্ডলিং
                         if 'Explanation' in sub_df.columns:
                             sub_df['Explanation'] = sub_df['Explanation'].fillna('ব্যাখ্যা নেই।')
                         else:
@@ -396,67 +395,67 @@ else:
                 st.info("এখনো কেউ পরীক্ষা দেয়নি।")
         else:
             if not st.session_state['exam_in_progress']:
-                st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন")
-                st.write("---")
-                
-                cols_per_row = 3
-                subject_chunks = [all_subjects_master[i:i + cols_per_row] for i in range(0, len(all_subjects_master), cols_per_row)]
-                
-                selected_card_subject = None
-                
-                for chunk in subject_chunks:
-                    row_cols = st.columns(len(chunk))
-                    for idx, sub in enumerate(chunk):
-                        with row_cols[idx]:
-                            is_running = sub in active_subjects
-                            
-                            with st.container(border=True):
-                                if is_running:
-                                    st.markdown(f"<h4 style='margin: 0 0 4px 0; color: #1e3d59; font-size: 16px; font-weight: bold; text-align: center;'>{sub}</h4>", unsafe_allow_html=True)
-                                    st.markdown("<p style='text-align: center; color: #137333; font-weight: bold; font-size: 13px; margin: 0 0 10px 0;'>🟢 পরীক্ষা আছে</p>", unsafe_allow_html=True)
-                                    if st.button(f"শুরু করুন", key=f"btn_sub_{sub}", use_container_width=True, type="primary"):
-                                        selected_card_subject = sub
-                                else:
-                                    st.markdown(f"<h4 style='margin: 0 0 4px 0; color: #5f6368; font-size: 16px; font-weight: bold; text-align: center;'>{sub}</h4>", unsafe_allow_html=True)
-                                    st.markdown("<p style='text-align: center; color: #64748b; font-weight: bold; font-size: 13px; margin: 0 0 10px 0;'>⚪ পরীক্ষা নেই</p>", unsafe_allow_html=True)
-                                    st.button(f"বন্ধ আছে", key=f"btn_sub_{sub}", use_container_width=True, disabled=True)
-                
-                if selected_card_subject:
-                    st.session_state['temp_selected_subject'] = selected_card_subject
-                    st.rerun()
-                
-                if 'temp_selected_subject' in st.session_state and st.session_state['temp_selected_subject'] in active_subjects:
-                    chosen_sub = st.session_state['temp_selected_subject']
+                # প্রথমে পরীক্ষার্থীর নাম এন্ট্রি নেওয়ার ধাপ (বিষয় নির্বাচনের আগে)
+                if not st.session_state['confirmed_student_name']:
+                    st.subheader("✍️ পরীক্ষার্থীর তথ্য")
                     st.write("---")
-                    df = all_q_df[all_q_df['Subject'] == chosen_sub].reset_index(drop=True)
-                    duration = 10
-                    if os.path.exists(CONFIG_FILE):
-                        conf_df = pd.read_csv(CONFIG_FILE)
-                        match_conf = conf_df[conf_df['Subject'] == chosen_sub]
-                        if not match_conf.empty: duration = int(match_conf.iloc[0]['Duration'])
-
-                    st.success(f"🎯 নির্বাচিত বিষয়: **{chosen_sub}** | ⏱️ সময়: {duration} মিনিট | প্রশ্ন সংখ্যা: {len(df)}টি")
-                    
                     with st.container(border=True):
-                        st.markdown("#### ✍️ পরীক্ষার্থীর তথ্য")
-                        student_name = st.text_input("আপনার পূর্ণ নাম লিখুন:", placeholder="এখানে নাম লিখুন", key="input_student_name_grid")
-                        
-                        col_b1, col_b2 = st.columns(2)
-                        with col_b1:
-                            if st.button("➔ পরীক্ষা শুরু করুন", type="primary", use_container_width=True):
-                                if student_name.strip():
-                                    st.session_state['confirmed_student_name'] = student_name.strip()
-                                    st.session_state['selected_exam_subject'] = chosen_sub
-                                    st.session_state['exam_start_time'] = time.time()
-                                    st.session_state['exam_in_progress'] = True
-                                    del st.session_state['temp_selected_subject']
-                                    st.rerun()
-                                else:
-                                    st.error("⚠️ নাম লিখুন।")
-                        with col_b2:
-                            if st.button("🔄 অন্য বিষয় নির্বাচন", use_container_width=True):
-                                del st.session_state['temp_selected_subject']
+                        st.markdown("পরীক্ষায় অংশ নিতে প্রথমে আপনার নাম এন্ট্রি করুন:")
+                        entered_name = st.text_input("আপনার পূর্ণ নাম লিখুন:", placeholder="এখানে নাম লিখুন", key="input_student_name_first")
+                        if st.button("➔ এগিয়ে যান (বিষয় নির্বাচন)", type="primary", use_container_width=True):
+                            if entered_name.strip():
+                                st.session_state['confirmed_student_name'] = entered_name.strip()
                                 st.rerun()
+                            else:
+                                st.error("⚠️ অনুগ্রহ করে আপনার নাম লিখুন।")
+                else:
+                    # নাম এন্ট্রি হয়ে গেলে তারপর বিষয় নির্বাচনের সেকশন দেখাবে
+                    col_name_info, col_name_change = st.columns([8, 2])
+                    with col_name_info:
+                        st.info(wel_msg := f"👤 পরীক্ষার্থী: **{st.session_state['confirmed_student_name']}**")
+                    with col_name_change:
+                        if st.button("✏️ নাম পরিবর্তন", use_container_width=True):
+                            st.session_state['confirmed_student_name'] = ""
+                            st.rerun()
+
+                    st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন")
+                    st.write("---")
+                    
+                    cols_per_row = 3
+                    subject_chunks = [all_subjects_master[i:i + cols_per_row] for i in range(0, len(all_subjects_master), cols_per_row)]
+                    
+                    selected_card_subject = None
+                    
+                    for chunk in subject_chunks:
+                        row_cols = st.columns(len(chunk))
+                        for idx, sub in enumerate(chunk):
+                            with row_cols[idx]:
+                                is_running = sub in active_subjects
+                                
+                                with st.container(border=True):
+                                    if is_running:
+                                        st.markdown(f"<h4 style='margin: 0 0 4px 0; color: #1e3d59; font-size: 16px; font-weight: bold; text-align: center;'>{sub}</h4>", unsafe_allow_html=True)
+                                        st.markdown("<p style='text-align: center; color: #137333; font-weight: bold; font-size: 13px; margin: 0 0 10px 0;'>🟢 পরীক্ষা আছে</p>", unsafe_allow_html=True)
+                                        if st.button(f"শুরু করুন", key=f"btn_sub_{sub}", use_container_width=True, type="primary"):
+                                            selected_card_subject = sub
+                                    else:
+                                        st.markdown(f"<h4 style='margin: 0 0 4px 0; color: #5f6368; font-size: 16px; font-weight: bold; text-align: center;'>{sub}</h4>", unsafe_allow_html=True)
+                                        st.markdown("<p style='text-align: center; color: #64748b; font-weight: bold; font-size: 13px; margin: 0 0 10px 0;'>⚪ পরীক্ষা নেই</p>", unsafe_allow_html=True)
+                                        st.button(f"বন্ধ আছে", key=f"btn_sub_{sub}", use_container_width=True, disabled=True)
+                    
+                    if selected_card_subject:
+                        chosen_sub = selected_card_subject
+                        df = all_q_df[all_q_df['Subject'] == chosen_sub].reset_index(drop=True)
+                        duration = 10
+                        if os.path.exists(CONFIG_FILE):
+                            conf_df = pd.read_csv(CONFIG_FILE)
+                            match_conf = conf_df[conf_df['Subject'] == chosen_sub]
+                            if not match_conf.empty: duration = int(match_conf.iloc[0]['Duration'])
+
+                        st.session_state['selected_exam_subject'] = chosen_sub
+                        st.session_state['exam_start_time'] = time.time()
+                        st.session_state['exam_in_progress'] = True
+                        st.rerun()
             else:
                 selected_subject = st.session_state.get('selected_exam_subject', active_subjects[0])
                 df = all_q_df[all_q_df['Subject'] == selected_subject].reset_index(drop=True)
