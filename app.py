@@ -249,16 +249,41 @@ if is_admin:
                         sub_df.columns = ['Question', 'Option_A', 'Option_B', 'Option_C', 'Option_D', 'Correct_Answer']
                         sub_df = sub_df.dropna(subset=['Question']).reset_index(drop=True)
                         
-                        # সুরক্ষিত ব্যাখ্যা কলাম হ্যান্ডলিং (এরর ফিক্সড)
+                        # সুরক্ষিত ব্যাখ্যা কলাম হ্যান্ডলিং
                         if 'Explanation' in sub_df.columns:
                             sub_df['Explanation'] = sub_df['Explanation'].fillna('ব্যাখ্যা নেই।')
                         else:
                             sub_df['Explanation'] = 'ব্যাখ্যা নেই।'
                         
-                        st.write(f"🔍 এই কলাম রেঞ্জ থেকে মোট প্রশ্ন পাওয়া গেছে: {len(sub_df)}টি")
+                        total_found = len(sub_df)
+                        st.info(f"🔍 এই কলাম রেঞ্জ থেকে মোট প্রশ্ন পাওয়া গেছে: {total_found}টি")
+                        
+                        st.markdown("---")
+                        st.markdown("##### ⚙️ প্রশ্ন ফিল্টারিং অপশন:")
+                        question_mode = st.radio(
+                            "পরীক্ষায় প্রশ্ন কীভাবে থাকবে?",
+                            ["সবগুলো প্রশ্ন রাখবো", "নির্দিষ্ট সংখ্যক প্রশ্ন রেন্ডমলি (Randomly) সিলেক্ট করবো"],
+                            key="admin_q_selection_mode"
+                        )
+                        
+                        selected_count = total_found
+                        is_random = False
+                        
+                        if question_mode == "নির্দিষ্ট সংখ্যক প্রশ্ন রেন্ডমলি (Randomly) সিলেক্ট করবো":
+                            selected_count = st.number_input(
+                                "কতটি প্রশ্ন রেন্ডমলি সিলেক্ট করতে চান?",
+                                min_value=1,
+                                max_value=total_found,
+                                value=min(20, total_found),
+                                key="admin_random_count_input"
+                            )
+                            is_random = True
                         
                         if st.button("📌 ফাইল থেকে এই বিষয়ের প্রশ্ন সেভ করুন", key="admin_save_from_file_btn"):
                             if not sub_df.empty:
+                                if is_random:
+                                    sub_df = sub_df.sample(n=selected_count).reset_index(drop=True)
+                                    
                                 sub_df['Subject'] = subject_name
                                 if os.path.exists(QUESTIONS_FILE):
                                     existing_q_df = pd.read_csv(QUESTIONS_FILE)
@@ -276,7 +301,7 @@ if is_admin:
                                 else:
                                     final_conf = config_df
                                 final_conf.to_csv(CONFIG_FILE, index=False)
-                                st.success(f"✅ '{subject_name}' এর ফাইল ডাটা সেভ হয়েছে!")
+                                st.success(f"✅ '{subject_name}' এর ফাইল থেকে {len(sub_df)}টি প্রশ্ন সফলভাবে সেভ হয়েছে!")
                                 st.rerun()
                             else:
                                 st.error("⚠️ কোনো প্রশ্ন পাওয়া যায়নি।")
