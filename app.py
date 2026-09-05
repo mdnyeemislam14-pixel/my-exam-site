@@ -168,9 +168,9 @@ if is_admin:
         for idx, sub in enumerate(all_subjects_master):
             with status_cols[idx]:
                 if sub in active_subjects:
-                    st.markdown(f"<div style='background:#e6f4ea; padding:8px; border-radius:5px; text-align:center; font-size:12px;'><b>{sub}</b><br>🟢 পরীক্ষা আছে</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='background:#e3eeff; border: 1.5px solid #2563eb; padding:6px; border-radius:6px; text-align:center; font-size:11px;'><b style='color:#1e3d59;'>{sub}</b><br><span style='color:#137333;'>🟢 পরীক্ষা আছে</span></div>", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"<div style='background:#f1f3f4; padding:8px; border-radius:5px; text-align:center; font-size:12px;'><b>{sub}</b><br>⚪ পরীক্ষা নেই</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='background:#f8f9fa; border: 1.5px solid #dadce0; padding:6px; border-radius:6px; text-align:center; font-size:11px;'><b style='color:#5f6368;'>{sub}</b><br><span style='color:#5f6368;'>⚪ পরীক্ষা নেই</span></div>", unsafe_allow_html=True)
         
         st.write("---")
         subject_name = st.selectbox("বিষয় নির্বাচন করুন:", all_subjects_master)
@@ -364,13 +364,13 @@ else:
                 else:
                     st.info("এখনো কোনো ফলাফল প্রকাশিত হয়নি।")
             else:
-                st.info("এখনো কেউ পরীক্ষা দিতে পারেনি।")
+                st.info("এখনো কেউ পরীক্ষা দেয়নি।")
         else:
             if not st.session_state['exam_in_progress']:
-                st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন (পাশাপাশি কার্ড)")
+                st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন")
                 st.write("---")
                 
-                # পাশাপাশি কার্ড বা গ্রিড আকারে বিষয়সমূহ দেখানো (যেমন ৩ কলাম করে)
+                # পাশাপাশি ছোট কার্ড বা গ্রিড আকারে বিষয়সমূহ (প্রতি লাইনে ৩ বা ৪টি)
                 cols_per_row = 3
                 subject_chunks = [all_subjects_master[i:i + cols_per_row] for i in range(0, len(all_subjects_master), cols_per_row)]
                 
@@ -382,18 +382,20 @@ else:
                         with row_cols[idx]:
                             is_running = sub in active_subjects
                             if is_running:
-                                card_bg = "#e6f4ea"
-                                border_col = "#34a853"
-                                status_text = "🟢 এখানেই পরীক্ষা আছে"
+                                card_bg = "#e3eeff"
+                                border_col = "#2563eb"
+                                status_text = "🟢 পরীক্ষা আছে"
+                                text_col = "#137333"
                             else:
                                 card_bg = "#f8f9fa"
                                 border_col = "#dadce0"
                                 status_text = "⚪ পরীক্ষা নেই"
+                                text_col = "#5f6368"
                             
                             st.markdown(f"""
-                                <div style="background-color: {card_bg}; border: 2px solid {border_col}; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 10px; min-height: 110px;">
-                                    <h4 style="margin: 0 0 8px 0; color: #202124; font-size: 16px;">{sub}</h4>
-                                    <span style="font-size: 13px; font-weight: bold; color: {'#137333' if is_running else '#5f6368'};">{status_text}</span>
+                                <div style="background-color: {card_bg}; border: 1.5px solid {border_col}; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 8px; min-height: 85px;">
+                                    <h5 style="margin: 0 0 6px 0; color: #1e3d59; font-size: 14px; font-weight: bold;">{sub}</h5>
+                                    <span style="font-size: 12px; font-weight: bold; color: {text_col};">{status_text}</span>
                                 </div>
                             """, unsafe_allow_html=True)
                             
