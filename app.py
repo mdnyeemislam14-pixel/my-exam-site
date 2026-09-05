@@ -8,7 +8,6 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="wide")
 
-# সাধারণ কিছু ক্লিনআপ সিএসএস (যা লেআউট ভাঙবে না)
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -249,7 +248,12 @@ if is_admin:
                         sub_df = raw_df.iloc[:, start_idx:end_idx].copy()
                         sub_df.columns = ['Question', 'Option_A', 'Option_B', 'Option_C', 'Option_D', 'Correct_Answer']
                         sub_df = sub_df.dropna(subset=['Question']).reset_index(drop=True)
-                        sub_df['Explanation'] = sub_df.get('Explanation', 'ব্যাখ্যা নেই।').fillna('ব্যাখ্যা নেই।')
+                        
+                        # সুরক্ষিত ব্যাখ্যা কলাম হ্যান্ডলিং (এরর ফিক্সড)
+                        if 'Explanation' in sub_df.columns:
+                            sub_df['Explanation'] = sub_df['Explanation'].fillna('ব্যাখ্যা নেই।')
+                        else:
+                            sub_df['Explanation'] = 'ব্যাখ্যা নেই।'
                         
                         st.write(f"🔍 এই কলাম রেঞ্জ থেকে মোট প্রশ্ন পাওয়া গেছে: {len(sub_df)}টি")
                         
@@ -381,7 +385,6 @@ else:
                         with row_cols[idx]:
                             is_running = sub in active_subjects
                             
-                            # Streamlit-এর বিল্ট-ইন container এবং border ব্যবহার করে নিখুঁত কালার ও বক্স তৈরি করা হয়েছে
                             with st.container(border=True):
                                 if is_running:
                                     st.markdown(f"<h4 style='margin: 0 0 4px 0; color: #1e3d59; font-size: 16px; font-weight: bold; text-align: center;'>{sub}</h4>", unsafe_allow_html=True)
