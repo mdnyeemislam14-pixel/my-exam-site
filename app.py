@@ -8,7 +8,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="wide")
 
-# ক্লিন এবং প্রিমিয়াম সিএসএস
+# ক্লিন, প্রিমিয়াম সিএসএস এবং ওয়াটারমার্ক (মডার্ন কার্ড ও হোভার ইফেক্টসহ)
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -20,13 +20,38 @@ hide_streamlit_style = """
         font-size: 14px !important;
     }
     
+    /* ব্যাকগ্রাউন্ড জলছাপ (Watermark) স্টাইল */
+    .stApp::before {
+        content: "Job Efforts";
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-30deg);
+        font-size: 8vw;
+        font-weight: bold;
+        color: rgba(100, 100, 100, 0.05);
+        z-index: 0;
+        pointer-events: none;
+        white-space: nowrap;
+        user-select: none;
+    }
+    
+    /* মডার্ন কোশ্চেন কার্ড ও হোভার ইফেক্ট */
     .question-card {
-        background-color: #fcfcfc;
-        border: 1px solid #e0e0e0;
-        padding: 20px;
-        border-radius: 10px;
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        padding: 22px;
+        border-radius: 12px;
         margin-bottom: 20px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .question-card:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+        border-color: #cbd5e1;
     }
     
     .result-box {
@@ -38,6 +63,8 @@ hide_streamlit_style = """
         font-weight: bold;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         margin-bottom: 25px;
+        position: relative;
+        z-index: 1;
     }
     
     .fixed-timer {
@@ -60,7 +87,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # শীর্ষ ব্যানার
 st.markdown("""
-    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #654ea3, #eaafc8); border-radius: 10px; margin-bottom: 20px; color: white;">
+    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #654ea3, #eaafc8); border-radius: 10px; margin-bottom: 20px; color: white; position: relative; z-index: 1;">
         <h2 style="margin: 0; font-size: 26px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h2>
         <p style="margin: 8px 0 10px 0; font-size: 14px; opacity: 0.95;">বিসিএস, ব্যাংক, প্রাথমিক সহকারী শিক্ষক নিয়োগ এবং NTRCA সহ সকল সরকারি চাকরির প্রস্তুতির বিশ্বস্ত মাধ্যম</p>
         <h4 style="margin: 0; font-size: 16px; letter-spacing: 1px;">✨ Powered by <span style="background-color: #ffcc00; color: #000; padding: 2px 10px; border-radius: 4px;">Job Efforts</span></h4>
@@ -236,7 +263,7 @@ if is_admin:
                         st.success("✅ সফলভাবে সেভ হয়েছে!")
 
         else:
-            uploaded_file = st.file_uploader("ফাইল আপলোড (xlsx/csv):", type=["xlsx", "csv"])
+            uploaded_file = st.file_uploader("ফাইল আপলোড (xlsx/csv):", type=["xlsx", "csv"], key="admin_file_uploader_main")
             if uploaded_file is not None:
                 try:
                     raw_df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
@@ -251,7 +278,7 @@ if is_admin:
                         "ICT (AK-AP)": (36, 42)
                     }
                     
-                    selected_range_name = st.selectbox("কলাম রেঞ্জ সিলেক্ট করুন:", options=list(column_ranges.keys()))
+                    selected_range_name = st.selectbox("কলাম রেঞ্জ সিলেক্ট করুন:", options=list(column_ranges.keys()), key="admin_col_range_select")
                     start_idx, end_idx = column_ranges[selected_range_name]
                     
                     if end_idx <= len(raw_df.columns):
@@ -268,7 +295,8 @@ if is_admin:
                         upload_sub_mode = st.radio(
                             "আপলোড করার পদ্ধতি বেছে নিন:",
                             ["সব প্রশ্ন একসাথে (Bulk Import)", "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই", "একটি একটি করে দেখে সিলেক্ট করুন (Manual)"],
-                            horizontal=True
+                            horizontal=True,
+                            key="admin_upload_sub_mode_radio"
                         )
                         
                         questions_to_save = pd.DataFrame()
@@ -277,7 +305,7 @@ if is_admin:
                             questions_to_save = sub_df
                             
                         elif upload_sub_mode == "রেন্ডমলি এলোমেলোভাবে প্রশ্ন বাছাই":
-                            sample_size = st.number_input("কতটি প্রশ্ন রেন্ডমলি নিতে চান?", min_value=1, max_value=len(sub_df), value=min(10, len(sub_df)))
+                            sample_size = st.number_input("কতটি প্রশ্ন রেন্ডমলি নিতে চান?", min_value=1, max_value=len(sub_df), value=min(10, len(sub_df)), key="admin_random_sample_size")
                             questions_to_save = sub_df.sample(n=sample_size).reset_index(drop=True)
                             st.success(f"✨ স্বয়ংক্রিয়ভাবে {sample_size}টি প্রশ্ন বাছাই করা হয়েছে!")
                             
@@ -286,11 +314,11 @@ if is_admin:
                             st.markdown("### 🔍 ম্যানুয়াল প্রশ্ন সিলেকশন প্রিভিউ")
                             selected_indices = []
                             for idx, row in sub_df.iterrows():
-                                if st.checkbox(f"প্রশ্ন {idx+1}: {str(row['Question'])[:50]}...", value=True, key=f"chk_q_{idx}"):
+                                if st.checkbox(f"প্রশ্ন {idx+1}: {str(row['Question'])[:50]}...", value=True, key=f"chk_q_{subject_name}_{idx}"):
                                     selected_indices.append(idx)
                             questions_to_save = sub_df.loc[selected_indices].reset_index(drop=True)
 
-                        if st.button("📌 ফাইল থেকে সেভ করুন"):
+                        if st.button("📌 ফাইল থেকে সেভ করুন", key="admin_save_from_file_btn"):
                             if not questions_to_save.empty:
                                 questions_to_save['Subject'] = subject_name
                                 if os.path.exists(QUESTIONS_FILE):
@@ -512,7 +540,6 @@ else:
                     elapsed_seconds = int(time.time() - st.session_state['exam_start_time'])
                     remaining_seconds = max(0, total_seconds - elapsed_seconds)
                     
-                    # জাভাস্ক্রিপ্ট লাইভ টাইমার এবং অটো সাবমিটের জন্য লজিক
                     timer_placeholder = st.empty()
                     
                     timer_html = f"""
@@ -544,7 +571,6 @@ else:
                                 
                                 if (remainingSecs <= 0) {{
                                     clearInterval(timerInterval);
-                                    // অটো সাবমিটের জন্য পেজ রিফ্রেশ বা ট্রিগার করা
                                     const submitButtons = window.parent.document.querySelectorAll('button');
                                     for (let btn of submitButtons) {{
                                         if (btn.innerText.includes('পরীক্ষা জমা দিন')) {{
@@ -583,7 +609,33 @@ else:
                             label_visibility="collapsed"
                         )
                     
-                    # যদি সময় শেষ হয়ে যায় (remaining_seconds <= 0), সরাসরি সাবমিট ট্রিগার হবে
+                    # প্রোগ্রেস বার এবং কোশ্চেন প্যালেট সংযোজন
+                    answered_count = sum(1 for i in range(len(active_df)) if user_answers.get(i) is not None)
+                    progress_percentage = answered_count / len(active_df)
+                    
+                    st.markdown("##### 📊 পরীক্ষার প্রোগ্রেস")
+                    st.progress(progress_percentage)
+                    st.write(f"উত্তর দিয়েছেন: **{answered_count}** / {len(active_df)} টি প্রশ্ন")
+                    st.write("---")
+                    
+                    # সাইডবারে কোশ্চেন প্যালেট (Question Palette)
+                    with st.sidebar:
+                        st.markdown("### 🧭 কোশ্চেন প্যালেট")
+                        st.markdown("🟢 উত্তর দেওয়া হয়েছে <br>⚪ উত্তর দেওয়া হয়নি", unsafe_allow_html=True)
+                        st.write("---")
+                        
+                        cols = st.columns(5)
+                        for i in range(len(active_df)):
+                            col_idx = i % 5
+                            is_ans = user_answers.get(i) is not None
+                            btn_label = f"{i+1}"
+                            
+                            with cols[col_idx]:
+                                if is_ans:
+                                    st.button(btn_label, key=f"palette_{i}", help="উত্তর দেওয়া হয়েছে", use_container_width=True, type="primary")
+                                else:
+                                    st.button(btn_label, key=f"palette_{i}", help="বাকি আছে", use_container_width=True)
+                    
                     if st.button("পরীক্ষা জমা দিন", type="primary") or remaining_seconds <= 0:
                         score = 0
                         for i, row in active_df.iterrows():
