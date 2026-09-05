@@ -85,9 +85,9 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# শীর্ষ ব্যানার
+# শীর্ষ ব্যানার (রয়্যাল ব্লু গ্রেডিয়েন্ট কালার সহ)
 st.markdown("""
-    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #654ea3, #eaafc8); border-radius: 10px; margin-bottom: 20px; color: white; position: relative; z-index: 1;">
+    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #4e54c8, #8f94fb); border-radius: 10px; margin-bottom: 20px; color: white; position: relative; z-index: 1;">
         <h2 style="margin: 0; font-size: 26px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h2>
         <p style="margin: 8px 0 10px 0; font-size: 14px; opacity: 0.95;">বিসিএস, ব্যাংক, প্রাথমিক সহকারী শিক্ষক নিয়োগ এবং NTRCA সহ সকল সরকারি চাকরির প্রস্তুতির বিশ্বস্ত মাধ্যম</p>
         <h4 style="margin: 0; font-size: 16px; letter-spacing: 1px;">✨ Powered by <span style="background-color: #ffcc00; color: #000; padding: 2px 10px; border-radius: 4px;">Job Efforts</span></h4>
