@@ -37,42 +37,42 @@ hide_streamlit_style = """
     }
     
     .question-card {
-        background-color: #ffffff;
-        border: 1px solid #e2e8f0;
+        background-color: #ffffff !important;
+        border: 1px solid #3B82F6 !important;
         padding: 22px;
         border-radius: 12px;
         margin-bottom: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1) !important;
         position: relative;
         z-index: 1;
     }
     
     .result-box {
-        background: linear-gradient(135deg, #f6d365, #fda085);
-        color: #2c3e50;
+        background: linear-gradient(135deg, #3B82F6, #1d4ed8) !important;
+        color: #ffffff !important;
         padding: 25px;
         border-radius: 12px;
         text-align: center;
         font-weight: bold;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
         margin-bottom: 25px;
         position: relative;
         z-index: 1;
     }
 
-    /* প্রিমিয়াম কালারফুল সাবজেক্ট কার্ড ডিজাইন */
+    /* আপনার দেওয়া #3B82F6 কালার দিয়ে কస్టম সাবজেক্ট কার্ড ডিজাইন */
     .subject-card-box {
-        background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
-        border: 2px solid #cbd5e1;
+        background: #f8fafc !important;
+        border: 2px solid #3B82F6 !important;
         padding: 20px;
         border-radius: 14px;
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 6px 15px rgba(59, 130, 246, 0.15) !important;
         margin-bottom: 15px;
         transition: all 0.3s ease;
     }
     .subject-card-box:hover {
-        border-color: #4e54c8;
-        box-shadow: 0 8px 20px rgba(78, 84, 200, 0.15);
+        border-color: #1d4ed8 !important;
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3) !important;
     }
     </style>
 """
@@ -81,7 +81,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # শীর্ষ ব্যানার
 st.markdown(
     """
-    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #4e54c8, #8f94fb); border-radius: 10px; margin-bottom: 20px; color: white; position: relative; z-index: 1;">
+    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #3B82F6, #1d4ed8); border-radius: 10px; margin-bottom: 20px; color: white; position: relative; z-index: 1;">
         <h2 style="margin: 0; font-size: 26px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h2>
         <p style="margin: 8px 0 10px 0; font-size: 14px; opacity: 0.95;">বিসিএস, ব্যাংক, প্রাথমিক সহকারী শিক্ষক নিয়োগ এবং NTRCA সহ সকল সরকারি চাকরির প্রস্তুতির বিশ্বস্ত মাধ্যম</p>
         <h4 style="margin: 0; font-size: 16px; letter-spacing: 1px;">✨ Powered by <span style="background-color: #ffcc00; color: #000; padding: 2px 10px; border-radius: 4px;">Job Efforts</span></h4>
@@ -175,7 +175,6 @@ if is_admin:
   )
   st.write("")
 
-  # --- অ্যাডমিন ড্যাশবোর্ড পেজ ---
   if admin_menu == "📊 অ্যাডমিন ড্যাশবোর্ড":
     st.subheader("📊 এডমিন ওভারভিউ ও ড্যাশবোর্ড")
     st.write("---")
@@ -283,7 +282,7 @@ if is_admin:
       with status_cols[idx]:
         if sub in active_subjects:
           st.markdown(
-              f"<div style='background:#f0f4ff; border: 1.5px solid #2563eb;"
+              f"<div style='background:#f0f4ff; border: 1.5px solid #3B82F6;"
               f" padding:6px; border-radius:6px; text-align:center;"
               f" font-size:11px;'><b"
               f" style='color:#1e3d59;'>{sub}</b><br><span"
@@ -669,7 +668,6 @@ else:
     else:
       if not st.session_state["exam_in_progress"]:
         st.subheader("✍️ পরীক্ষার্থীর তথ্য")
-        # কাস্টম স্টাইলড কন্টেইনার ব্যবহার করা হয়েছে
         st.markdown('<div class="subject-card-box">', unsafe_allow_html=True)
         col_input, col_btn = st.columns([8, 2])
         with col_input:
@@ -866,7 +864,7 @@ else:
         remaining_seconds = max(0, total_seconds - elapsed_seconds)
 
         timer_html = f"""
-                <div style="background: linear-gradient(135deg, #ff4b4b, #ff9068); color: white; padding: 10px 15px; border-radius: 8px; text-align: center; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; font-size: 16px;">
+                <div style="background: linear-gradient(135deg, #3B82F6, #1d4ed8); color: white; padding: 10px 15px; border-radius: 8px; text-align: center; font-weight: bold; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2); margin-bottom: 20px; font-size: 16px;">
                     ⏳ বাকি সময়: <span id="time-display">--:--</span>
                 </div>
                 <script>
