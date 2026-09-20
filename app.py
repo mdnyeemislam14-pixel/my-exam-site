@@ -10,7 +10,7 @@ st.set_page_config(
     page_title="অনলাইন পরীক্ষা প্ল্যাটফর্ম", page_icon="📝", layout="wide"
 )
 
-# প্রিমিয়াম এবং পরিপাটি CSS ডিজাইন
+# প্রিমিয়াম থ্রি-ডি (3D) বক্স এবং পরিপাটি CSS ডিজাইন
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -33,7 +33,7 @@ hide_streamlit_style = """
         padding: 22px;
         border-radius: 12px;
         margin-bottom: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02) !important;
     }
     
     .result-box {
@@ -47,20 +47,21 @@ hide_streamlit_style = """
         margin-bottom: 25px;
     }
 
-    /* আধুনিক ও পরিচ্ছন্ন সাবজেক্ট কার্ড ডিজাইন */
-    .clean-card {
+    /* থ্রি-ডি (3D) বক্স বা কার্ড স্টাইল */
+    [data-testid="stVerticalBlock"] > [data-testid="stContainer"] {
         background: #ffffff !important;
+        border-radius: 16px !important;
+        padding: 20px !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
         border: 1px solid #e2e8f0 !important;
-        border-top: 4px solid #3B82F6 !important;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-        margin-bottom: 20px;
-        transition: all 0.3s ease;
+        transition: all 0.3s ease-in-out !important;
+        margin-bottom: 15px;
     }
-    .clean-card:hover {
-        box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.15) !important;
-        transform: translateY(-2px);
+    
+    [data-testid="stVerticalBlock"] > [data-testid="stContainer"]:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 30px -10px rgba(59, 130, 246, 0.15), 0 10px 15px -5px rgba(0, 0, 0, 0.05) !important;
+        border-color: #3B82F6 !important;
     }
     </style>
 """
@@ -69,7 +70,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # শীর্ষ ব্যানার
 st.markdown(
     """
-    <div style="text-align: center; padding: 25px; background: linear-gradient(135deg, #3B82F6, #1d4ed8); border-radius: 12px; margin-bottom: 25px; color: white; box-shadow: 0 4px 12px rgba(59,130,246,0.2);">
+    <div style="text-align: center; padding: 25px; background: linear-gradient(135deg, #3B82F6, #1d4ed8); border-radius: 16px; margin-bottom: 25px; color: white; box-shadow: 0 10px 25px -5px rgba(59,130,246,0.3);">
         <h2 style="margin: 0; font-size: 26px; font-weight: bold;">📝 অনলাইন মডেল টেস্ট প্ল্যাটফর্ম</h2>
         <p style="margin: 8px 0 10px 0; font-size: 14px; opacity: 0.95;">বিসিএস, ব্যাংক, প্রাথমিক সহকারী শিক্ষক নিয়োগ এবং NTRCA সহ সকল সরকারি চাকরির প্রস্তুতির বিশ্বস্ত মাধ্যম</p>
         <h4 style="margin: 0; font-size: 15px; letter-spacing: 1px;">✨ Powered by <span style="background-color: #ffcc00; color: #000; padding: 2px 10px; border-radius: 4px;">Job Efforts</span></h4>
@@ -94,7 +95,7 @@ bio_chapters_master = [
     "অষ্টম অধ্যায়: রেচন প্রক্রিয়া",
 ]
 
-# সেশন স্টেট
+# সেশন স্টেট ইনিশিয়ালাইজেশন
 if "is_admin_logged_in" not in st.session_state:
   st.session_state["is_admin_logged_in"] = False
 if "confirmed_student_name" not in st.session_state:
@@ -108,7 +109,7 @@ if "selected_exam_subject" not in st.session_state:
 if "exam_in_progress" not in st.session_state:
   st.session_state["exam_in_progress"] = False
 
-# টপ নেভিগেশন
+# টপ নেভিগেশন ও অ্যাডমিন পপওভার
 col_nav1, col_nav2, col_nav3 = st.columns([6, 3, 3])
 with col_nav3:
   if not st.session_state["exam_in_progress"]:
@@ -146,8 +147,9 @@ all_subjects_master = [
 ]
 
 if is_admin:
-  # অ্যাডমিন প্যানেল কোড আগের মতোই থাকবে
-  pass
+  st.subheader("🛠️ অ্যাডমিন কন্ট্রোল প্যানেল")
+  st.write("এখানে পরীক্ষার প্রশ্ন এবং সেটিংস পরিচালনা করুন।")
+  # (অ্যাডমিন প্যানেলের বাকি অংশ এখানে থাকবে)
 else:
   if not st.session_state["exam_in_progress"]:
     student_menu = st.radio(
@@ -169,13 +171,20 @@ else:
   )
 
   if st.session_state["exam_submitted"]:
-    # ফলাফল দেখানোর অংশ আগের মতোই
+    # পরীক্ষার ফলাফল স্ক্রিন
     pass
   else:
     if student_menu == "🏆 ক্লাসের মেধা তালিকা (Leaderboard)":
       st.subheader("🏆 ক্লাসের লাইভ মেধা তালিকা")
       st.write("---")
-      # লিডারবোর্ড অংশ
+      if os.path.exists(RESULT_FILE):
+        res_df = pd.read_csv(RESULT_FILE)
+        if not res_df.empty:
+          st.dataframe(res_df, use_container_width=True)
+        else:
+          st.info("এখনো কোনো ফলাফল জমা হয়নি।")
+      else:
+        st.info("এখনো কোনো ফলাফল জমা হয়নি।")
     else:
       if not st.session_state["exam_in_progress"]:
         st.subheader("✍️ পরীক্ষার্থীর তথ্য")
@@ -219,24 +228,24 @@ else:
             for i in range(0, len(all_subjects_master), cols_per_row)
         ]
 
+        # থ্রি-ডি বক্স কার্ড লেআউট লুপ
         for chunk in subject_chunks:
           row_cols = st.columns(len(chunk))
           for idx, sub in enumerate(chunk):
             with row_cols[idx]:
-              # Streamlit-এর ডিফল্ট বর্ডার কন্টেইনার ব্যবহার করে ঝামেলা মুক্ত কার্ড তৈরি
               with st.container(border=True):
                 if sub != "জীববিজ্ঞান":
                   is_running = sub in other_active_subjects
                   st.markdown(
-                      f"<h4 style='margin: 0 0 5px 0; color: #1e3d59; font-size:"
-                      f" 17px; font-weight: bold; text-align:"
+                      f"<h4 style='margin: 0 0 8px 0; color: #1e3d59; font-size:"
+                      f" 17px; font-weight: 700; text-align:"
                       f" center;'>{sub}</h4>",
                       unsafe_allow_html=True,
                   )
                   if is_running:
                     st.markdown(
                         "<p style='text-align: center; color: #16a34a; font-weight:"
-                        " bold; font-size: 13px; margin: 0 0 15px 0;'>🟢 পরীক্ষা"
+                        " 600; font-size: 13px; margin: 0 0 15px 0;'>🟢 পরীক্ষা"
                         " আছে</p>",
                         unsafe_allow_html=True,
                     )
@@ -258,8 +267,8 @@ else:
                         st.error("⚠️ প্রথমে উপরে নাম লিখে সাবমিট করুন!")
                   else:
                     st.markdown(
-                        "<p style='text-align: center; color: #64748b; font-weight:"
-                        " bold; font-size: 13px; margin: 0 0 15px 0;'>⚪ পরীক্ষা"
+                        "<p style='text-align: center; color: #94a3b8; font-weight:"
+                        " 600; font-size: 13px; margin: 0 0 15px 0;'>⚪ পরীক্ষা"
                         " নেই</p>",
                         unsafe_allow_html=True,
                     )
@@ -272,15 +281,15 @@ else:
                 else:
                   is_bio_running = len(active_bio_sub_keys) > 0
                   st.markdown(
-                      "<h4 style='margin: 0 0 5px 0; color: #1e3d59; font-size:"
-                      " 17px; font-weight: bold; text-align:"
+                      "<h4 style='margin: 0 0 8px 0; color: #1e3d59; font-size:"
+                      " 17px; font-weight: 700; text-align:"
                       " center;'>জীববিজ্ঞান</h4>",
                       unsafe_allow_html=True,
                   )
                   if is_bio_running:
                     st.markdown(
                         "<p style='text-align: center; color: #16a34a; font-weight:"
-                        " bold; font-size: 13px; margin: 0 0 10px 0;'>🟢"
+                        " 600; font-size: 13px; margin: 0 0 10px 0;'>🟢"
                         " অধ্যায়ভিত্তিক পরীক্ষা আছে</p>",
                         unsafe_allow_html=True,
                     )
@@ -314,8 +323,8 @@ else:
                         st.error("⚠️ প্রথমে উপরে নাম লিখে সাবমিট করুন!")
                   else:
                     st.markdown(
-                        "<p style='text-align: center; color: #64748b; font-weight:"
-                        " bold; font-size: 13px; margin: 0 0 15px 0;'>⚪ পরীক্ষা"
+                        "<p style='text-align: center; color: #94a3b8; font-weight:"
+                        " 600; font-size: 13px; margin: 0 0 15px 0;'>⚪ পরীক্ষা"
                         " নেই</p>",
                         unsafe_allow_html=True,
                     )
