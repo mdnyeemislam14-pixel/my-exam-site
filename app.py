@@ -131,44 +131,109 @@ all_subjects_master = [
 
 if is_admin:
   st.subheader("🛠️ অ্যাডমিন কন্ট্রোল প্যানেল")
-  st.write("এখানে পরীক্ষার প্রশ্ন এবং ডেটাসেট পরিচালনা করুন।")
+  st.write("---")
 
-  tab1, tab2 = st.tabs(["প্রশ্ন আপলোড/তৈরি", "ফলাফল দেখুন"])
-  with tab1:
-    with st.form("question_form"):
-      q_subject = st.selectbox(
-          "বিষয় নির্বাচন করুন", all_subjects_master + [f"জীববিজ্ঞান - {ch}" for ch in bio_chapters_master]
-      )
+  admin_menu = st.radio(
+      "অ্যাডমিন মেনু নির্বাচন করুন:",
+      [
+          "📝 প্রশ্ন তৈরি ও ম্যানেজ",
+          "🟢 পরীক্ষা চালু/বন্ধ করুন",
+          "🏆 শিক্ষার্থীদের ফলাফল",
+      ],
+      horizontal=True,
+  )
+  st.write("")
+
+  if admin_menu == "📝 প্রশ্ন তৈরি ও ম্যানেজ":
+    st.markdown("#### নতুন প্রশ্ন যুক্ত করুন")
+    with st.form("admin_question_form"):
+      sub_list_full = all_subjects_master + [
+          f"জীববিজ্ঞান - {ch}" for ch in bio_chapters_master
+      ]
+      q_subject = st.selectbox("বিষয় বা অধ্যায় নির্বাচন করুন:", sub_list_full)
       q_text = st.text_area("প্রশ্ন লিখুন:")
-      opt_a = st.text_input("অপশন ক:")
-      opt_b = st.text_input("অপশন খ:")
-      opt_c = st.text_input("অপশন গ:")
-      opt_d = st.text_input("অপশন ঘ:")
-      correct_opt = st.selectbox("সঠিক উত্তর:", [opt_a, opt_b, opt_c, opt_d])
-      
-      submitted_q = st.form_submit_button("প্রশ্ন যোগ করুন")
-      if submitted_q and q_text and correct_opt:
-        new_q_df = pd.DataFrame([{
-            "Subject": q_subject,
-            "Question": q_text,
-            "OptionA": opt_a,
-            "OptionB": opt_b,
-            "OptionC": opt_c,
-            "OptionD": opt_d,
-            "Correct": correct_opt
-        }])
-        if os.path.exists(QUESTIONS_FILE):
-          old_df = pd.read_csv(QUESTIONS_FILE)
-          new_q_df = pd.concat([old_df, new_q_df], ignore_index=True)
-        new_q_df.to_csv(QUESTIONS_FILE, index=False)
-        st.success("সফলভাবে প্রশ্ন যুক্ত হয়েছে!")
 
-  with tab2:
+      col_op1, col_op2 = st.columns(2)
+      with col_op1:
+        opt_a = st.text_input("অপশন ক:")
+        opt_c = st.text_input("অপশন গ:")
+      with col_op2:
+        opt_b = st.text_input("অপশন খ:")
+        opt_d = st.text_input("অপশন ঘ:")
+
+      correct_ans = st.selectbox(
+          "সঠিক উত্তর নির্বাচন করুন:", [opt_a, opt_b, opt_c, opt_d]
+      )
+
+      submitted_q = st.form_submit_button(
+          "➕ প্রশ্ন সেভ করুন", type="primary"
+      )
+      if submitted_q:
+        if q_text.strip() and correct_ans.strip():
+          new_row = pd.DataFrame(
+              [{
+                  "Subject": q_subject,
+                  "Question": q_text,
+                  "OptionA": opt_a,
+                  "OptionB": opt_b,
+                  "OptionC": opt_c,
+                  "OptionD": opt_d,
+                  "Correct": correct_ans,
+              }]
+          )
+          if os.path.exists(QUESTIONS_FILE):
+            old_q_df = pd.read_csv(QUESTIONS_FILE)
+            new_row = pd.concat([old_q_df, new_row], ignore_index=True)
+          new_row.to_csv(QUESTIONS_FILE, index=False)
+          st.success("✅ সফলভাবে প্রশ্ন যুক্ত হয়েছে!")
+        else:
+          st.error("⚠️ অনুগ্রহ করে প্রশ্ন এবং সঠিক উত্তর পূরণ করুন!")
+
+    if os.path.exists(QUESTIONS_FILE):
+      st.write("---")
+      st.markdown("#### বিদ্যমান প্রশ্নসমূহ")
+      q_display_df = pd.read_csv(QUESTIONS_FILE)
+      st.dataframe(q_display_df, use_container_width=True)
+
+  elif admin_menu == "🟢 পরীক্ষা চালু/বন্ধ করুন":
+    st.markdown("#### কোন বিষয়গুলোর পরীক্ষা চালু রাখবেন তা টিক দিন")
+    all_q_df = (
+        pd.read_csv(QUESTIONS_FILE)
+        if os.path.exists(QUESTIONS_FILE)
+        else pd.DataFrame()
+    )
+    existing_q_subjects = (
+        all_q_df["Subject"].unique().tolist()
+        if not all_q_df.empty and "Subject" in all_q_df.columns
+        else []
+    )
+
+    if existing_q_subjects:
+      st.info(
+          "যে বিষয়গুলোতে ডাটাবেজে প্রশ্ন আছে, সেগুলোর তালিকা নিচে দেখানো হলো:"
+      )
+      for sub_item in existing_q_subjects:
+        st.write(f"✔️ **{sub_item}** - প্রশ্ন উপলব্ধ রয়েছে।")
+    else:
+      st.warning(
+          "⚠️ এখনো কোনো প্রশ্ন ডাটাবেজে নেই। আগে 'প্রশ্ন তৈরি ও ম্যানেজ' থেকে"
+          " প্রশ্ন যোগ করুন।"
+      )
+
+  elif admin_menu == "🏆 শিক্ষার্থীদের ফলাফল":
+    st.markdown("#### শিক্ষার্থীদের পরীক্ষার ফলাফল তালিকা")
     if os.path.exists(RESULT_FILE):
       res_df = pd.read_csv(RESULT_FILE)
-      st.dataframe(res_df, use_container_width=True)
+      if not res_df.empty:
+        st.dataframe(res_df, use_container_width=True)
+        if st.button("🗑️ সকল ফলাফল মুছে ফেলুন", type="primary"):
+          os.remove(RESULT_FILE)
+          st.success("ফলাফল রিসেট করা হয়েছে!")
+          st.rerun()
+      else:
+        st.info("এখনো কোনো ফলাফল জমা হয়নি।")
     else:
-      st.info("কোনো ফলাফল নেই।")
+      st.info("এখনো কোনো ফলাফল জমা হয়নি।")
 
 else:
   if not st.session_state["exam_in_progress"]:
@@ -205,7 +270,7 @@ else:
             """,
           unsafe_allow_html=True,
       )
-    if st.button("🔄 হোম পেজে ফিরে যান"):
+    if st.button("🔄 হোম পেজে ফিরে যান", type="primary"):
       st.session_state["exam_submitted"] = False
       st.session_state["last_result_data"] = None
       st.rerun()
@@ -222,7 +287,7 @@ else:
           st.info("এখনো কোনো ফলাফল জমা হয়নি।")
       else:
         st.info("এখনো কোনো ফলাফল জমা হয়নি।")
-        
+
     else:
       if not st.session_state["exam_in_progress"]:
         st.subheader("✍️ পরীক্ষার্থীর তথ্য")
@@ -266,7 +331,7 @@ else:
             for i in range(0, len(all_subjects_master), cols_per_row)
         ]
 
-        # কার্ড ডিজাইন সহ সাবজেক্ট লুপ (নীল রঙের শিরোনাম ও নেটিভ কন্টেইনার)
+        # সুন্দর বক্স কার্ড ও নীল রঙের শিরোনাম সহ সাবজেক্ট লুপ
         for chunk in subject_chunks:
           row_cols = st.columns(len(chunk))
           for idx, sub in enumerate(chunk):
@@ -274,7 +339,7 @@ else:
               with st.container(border=True):
                 if sub != "জীববিজ্ঞান":
                   is_running = sub in other_active_subjects
-                  
+
                   # প্রিমিয়াম নীল রঙের বিষয়ের নাম (#2563eb)
                   st.markdown(
                       f"<h4 style='margin: 0 0 8px 0; color: #2563eb; font-size:"
@@ -282,7 +347,7 @@ else:
                       f" center;'>{sub}</h4>",
                       unsafe_allow_html=True,
                   )
-                  
+
                   if is_running:
                     st.markdown(
                         "<p style='text-align: center; color: #16a34a; font-weight:"
@@ -321,7 +386,7 @@ else:
                     )
                 else:
                   is_bio_running = len(active_bio_sub_keys) > 0
-                  
+
                   # জীববিজ্ঞান নীল রঙের শিরোনাম
                   st.markdown(
                       "<h4 style='margin: 0 0 8px 0; color: #2563eb; font-size:"
@@ -329,7 +394,7 @@ else:
                       " center;'>জীববিজ্ঞান</h4>",
                       unsafe_allow_html=True,
                   )
-                  
+
                   if is_bio_running:
                     st.markdown(
                         "<p style='text-align: center; color: #16a34a; font-weight:"
@@ -408,7 +473,9 @@ else:
                 )
                 st.write("")
 
-              submitted_exam = st.form_submit_button("পরীক্ষা জমা দিন", type="primary")
+              submitted_exam = st.form_submit_button(
+                  "পরীক্ষা জমা দিন", type="primary"
+              )
               if submitted_exam:
                 score = 0
                 wrong = 0
@@ -434,13 +501,14 @@ else:
                     "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
 
-                # সেভ করা
                 res_df = (
                     pd.read_csv(RESULT_FILE)
                     if os.path.exists(RESULT_FILE)
                     else pd.DataFrame()
                 )
-                res_df = pd.concat([res_df, pd.DataFrame([result_dict])], ignore_index=True)
+                res_df = pd.concat(
+                    [res_df, pd.DataFrame([result_dict])], ignore_index=True
+                )
                 res_df.to_csv(RESULT_FILE, index=False)
 
                 st.session_state["last_result_data"] = result_dict
