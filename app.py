@@ -60,18 +60,19 @@ hide_streamlit_style = """
         z-index: 1;
     }
 
-    /* কাস্টম স্টাইলড সাবজেক্ট কার্ড কন্টেইনার */
+    /* প্রিমিয়াম কালারফুল সাবজেক্ট কার্ড ডিজাইন */
     .subject-card-box {
-        background: linear-gradient(135deg, #ffffff, #f8fafc);
+        background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
         border: 2px solid #cbd5e1;
-        padding: 15px;
-        border-radius: 12px;
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+        margin-bottom: 15px;
         transition: all 0.3s ease;
     }
     .subject-card-box:hover {
         border-color: #4e54c8;
-        box-shadow: 0 8px 16px rgba(78, 84, 200, 0.15);
+        box-shadow: 0 8px 20px rgba(78, 84, 200, 0.15);
     }
     </style>
 """
@@ -302,7 +303,6 @@ if is_admin:
     st.write("---")
     subject_name = st.selectbox("বিষয় নির্বাচন করুন:", all_subjects_master)
 
-    # যদি জীববিজ্ঞান হয়, তবে অধ্যায় সিলেক্ট করার অপশন আসবে
     current_subject_key = subject_name
     if subject_name == "জীববিজ্ঞান":
       selected_chapter = st.selectbox("অধ্যায় নির্বাচন করুন:", bio_chapters_master)
@@ -669,28 +669,30 @@ else:
     else:
       if not st.session_state["exam_in_progress"]:
         st.subheader("✍️ পরীক্ষার্থীর তথ্য")
-        with st.container(border=True):
-          col_input, col_btn = st.columns([8, 2])
-          with col_input:
-            student_name_input = st.text_input(
-                "আপনার পূর্ণ নাম লিখুন:",
-                placeholder="এখানে নাম লিখুন",
-                value=st.session_state.get("confirmed_student_name", ""),
-                key="input_student_name_single_page",
-            )
-          with col_btn:
-            st.write("")
-            st.write("")
-            if st.button(
-                "✅ সাবমিট করুন", use_container_width=True, type="secondary"
-            ):
-              if student_name_input.strip():
-                st.session_state["confirmed_student_name"] = (
-                    student_name_input.strip()
-                )
-                st.success("নাম সংরক্ষিত হয়েছে!")
-              else:
-                st.error("নাম লিখুন!")
+        # কাস্টম স্টাইলড কন্টেইনার ব্যবহার করা হয়েছে
+        st.markdown('<div class="subject-card-box">', unsafe_allow_html=True)
+        col_input, col_btn = st.columns([8, 2])
+        with col_input:
+          student_name_input = st.text_input(
+              "আপনার পূর্ণ নাম লিখুন:",
+              placeholder="এখানে নাম লিখুন",
+              value=st.session_state.get("confirmed_student_name", ""),
+              key="input_student_name_single_page",
+          )
+        with col_btn:
+          st.write("")
+          st.write("")
+          if st.button(
+              "✅ সাবমিট করুন", use_container_width=True, type="secondary"
+          ):
+            if student_name_input.strip():
+              st.session_state["confirmed_student_name"] = (
+                  student_name_input.strip()
+              )
+              st.success("নাম সংরক্ষিত হয়েছে!")
+            else:
+              st.error("নাম লিখুন!")
+        st.markdown('</div>', unsafe_allow_html=True)
 
         st.write("")
         st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন")
@@ -715,8 +717,9 @@ else:
             with row_cols[idx]:
               if sub != "জীববিজ্ঞান":
                 is_running = sub in other_active_subjects
-                # কাস্টম স্টাইলড কার্ড ব্যবহার করা হলো
-                st.markdown('<div class="subject-card-box">', unsafe_allow_html=True)
+                st.markdown(
+                    '<div class="subject-card-box">', unsafe_allow_html=True
+                )
                 if is_running:
                   st.markdown(
                       f"<h4 style='margin: 0 0 4px 0; color: #1e3d59;"
@@ -768,10 +771,12 @@ else:
                       use_container_width=True,
                       disabled=True,
                   )
-                st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
               else:
                 is_bio_running = len(active_bio_sub_keys) > 0
-                st.markdown('<div class="subject-card-box">', unsafe_allow_html=True)
+                st.markdown(
+                    '<div class="subject-card-box">', unsafe_allow_html=True
+                )
                 st.markdown(
                     "<h4 style='margin: 0 0 4px 0; color: #1e3d59;"
                     " font-size: 16px; font-weight: bold; text-align:"
@@ -828,7 +833,7 @@ else:
                       use_container_width=True,
                       disabled=True,
                   )
-                st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
       else:
         selected_subject = st.session_state.get(
             "selected_exam_subject", active_subjects[0]
