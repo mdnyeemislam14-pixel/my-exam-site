@@ -80,6 +80,18 @@ QUESTIONS_FILE = "saved_questions.csv"
 CONFIG_FILE = "exam_configs.csv"
 ADMIN_PASSWORD = "1234"
 
+# জীববিজ্ঞানের অধ্যায়সমূহ
+bio_chapters_master = [
+    "প্রথম অধ্যায়: জীবনপাঠ",
+    "দ্বিতীয় অধ্যায়: জীবকোষ ও টিস্যু",
+    "তৃতীয় অধ্যায়: কোষ বিভাজন",
+    "চতুর্থ অধ্যায়: জীবনীশক্তি",
+    "পঞ্চম অধ্যায়: খাদ্য, পুষ্টি এবং পরিপাক",
+    "ষষ্ঠ অধ্যায়: জীবে পরিবহন",
+    "সপ্তম অধ্যায়: গ্যাসীয় বিনিময়",
+    "অষ্টম অধ্যায়: রেচন প্রক্রিয়া",
+]
+
 # সেশন স্টেট ইনিশিয়ালাইজেশন
 if "is_admin_logged_in" not in st.session_state:
   st.session_state["is_admin_logged_in"] = False
@@ -91,6 +103,8 @@ if "last_result_data" not in st.session_state:
   st.session_state["last_result_data"] = None
 if "selected_exam_subject" not in st.session_state:
   st.session_state["selected_exam_subject"] = ""
+if "selected_bio_chapter" not in st.session_state:
+  st.session_state["selected_bio_chapter"] = ""
 if "exam_in_progress" not in st.session_state:
   st.session_state["exam_in_progress"] = False
 
@@ -105,6 +119,7 @@ with col_nav3:
         st.session_state["confirmed_student_name"] = ""
         st.session_state["exam_submitted"] = False
         st.session_state["selected_exam_subject"] = ""
+        st.session_state["selected_bio_chapter"] = ""
         st.session_state["exam_in_progress"] = False
         st.rerun()
     else:
@@ -127,6 +142,7 @@ all_subjects_master = [
     "English",
     "গণিত",
     "বিজ্ঞান",
+    "জীববিজ্ঞান",
     "বাংলাদেশের বিষয়াবলি",
     "আন্তর্জাতিক বিষয়াবলি",
     "ICT",
@@ -144,12 +160,11 @@ if is_admin:
   )
   st.write("")
 
-  # --- নতুন যোগ করা ড্যাশবোর্ড পেজ ---
+  # --- অ্যাডমিন ড্যাশবোর্ড পেজ ---
   if admin_menu == "📊 অ্যাডমিন ড্যাশবোর্ড":
     st.subheader("📊 এডমিন ওভারভিউ ও ড্যাশবোর্ড")
     st.write("---")
 
-    # ডাটা লোড করা
     q_df = (
         pd.read_csv(QUESTIONS_FILE) if os.path.exists(QUESTIONS_FILE) else pd.DataFrame()
     )
@@ -165,7 +180,6 @@ if is_admin:
         else 0
     )
 
-    # মেট্রিক কার্ড
     col_d1, col_d2, col_d3 = st.columns(3)
     col_d1.metric("📚 মোট সংরক্ষিত প্রশ্ন", f"{total_q_count} টি")
     col_d2.metric("🟢 চালু থাকা বিষয়", f"{active_subs_count} টি")
@@ -177,6 +191,21 @@ if is_admin:
       sub_counts = q_df["Subject"].value_counts().reset_index()
       sub_counts.columns = ["বিষয়", "প্রশ্ন সংখ্যা"]
       st.dataframe(sub_counts, use_container_width=True)
+
+      st.write("---")
+      st.subheader("👀 সংরক্ষিত প্রশ্নাবলি দেখুন")
+      subjects_list_for_view = ["সকল বিষয়"] + q_df["Subject"].unique().tolist()
+      selected_view_sub = st.selectbox(
+          "বিষয় নির্বাচন করুন:", subjects_list_for_view, key="view_q_sub"
+      )
+
+      if selected_view_sub == "সকল বিষয়":
+        display_df = q_df.copy()
+      else:
+        display_df = q_df[q_df["Subject"] == selected_view_sub].copy()
+
+      display_df.index = display_df.index + 1
+      st.dataframe(display_df, use_container_width=True)
     else:
       st.info("এখনো কোনো বিষয়ে প্রশ্ন আপলোড করা হয়নি।")
 
@@ -258,6 +287,15 @@ if is_admin:
 
     st.write("---")
     subject_name = st.selectbox("বিষয় নির্বাচন করুন:", all_subjects_master)
+
+    # যদি জীববিজ্ঞান হয়, তবে অধ্যায় সিলেক্ট করার অপশন আসবে
+    current_subject_key = subject_name
+    if subject_name == "জীববিজ্ঞান":
+      selected_chapter = st.selectbox("অধ্যায় নির্বাচন করুন:", bio_chapters_master)
+      current_subject_key = f"জীববিজ্ঞান - {selected_chapter}"
+    else:
+      selected_chapter = ""
+
     exam_duration = st.number_input(
         "⏱️ পরীক্ষার সময় (মিনিট):", min_value=1, max_value=300, value=10
     )
@@ -325,7 +363,7 @@ if is_admin:
                   )
 
               parsed_questions.append({
-                  "Subject": subject_name,
+                  "Subject": current_subject_key,
                   "Question": q_text,
                   "Option_A": opt_a,
                   "Option_B": opt_b,
@@ -340,7 +378,7 @@ if is_admin:
             if os.path.exists(QUESTIONS_FILE):
               existing_q_df = pd.read_csv(QUESTIONS_FILE)
               existing_q_df = existing_q_df[
-                  existing_q_df["Subject"] != subject_name
+                  existing_q_df["Subject"] != current_subject_key
               ]
               final_q_df = pd.concat(
                   [existing_q_df, new_df], ignore_index=True
@@ -350,13 +388,13 @@ if is_admin:
 
             final_q_df.to_csv(QUESTIONS_FILE, index=False)
             config_df = pd.DataFrame(
-                [{"Subject": subject_name, "Duration": exam_duration}]
+                [{"Subject": current_subject_key, "Duration": exam_duration}]
             )
 
             if os.path.exists(CONFIG_FILE):
               existing_conf = pd.read_csv(CONFIG_FILE)
               existing_conf = existing_conf[
-                  existing_conf["Subject"] != subject_name
+                  existing_conf["Subject"] != current_subject_key
               ]
               final_conf = pd.concat(
                   [existing_conf, config_df], ignore_index=True
@@ -365,8 +403,7 @@ if is_admin:
               final_conf = config_df
             final_conf.to_csv(CONFIG_FILE, index=False)
             st.success(
-                f"✅ '{subject_name}' এর জন্য সফলভাবে সেভ হয়েছে এবং এখন 'পরীক্ষা"
-                " আছে'!"
+                f"✅ '{current_subject_key}' এর জন্য সফলভাবে সেভ হয়েছে!"
             )
             st.rerun()
 
@@ -388,8 +425,8 @@ if is_admin:
               "English (G-L)": (6, 12),
               "গণিত (M-R)": (12, 18),
               "বিজ্ঞান (S-X)": (18, 24),
-              "বাংলাদেশ (Y-AD)": (24, 30),
-              "আন্তর্জাতিক (AE-AJ)": (30, 36),
+              "বাংলাদেশের বিষয়াবলি (Y-AD)": (24, 30),
+              "আন্তর্জাতিক বিষয়াবলি (AE-AJ)": (30, 36),
               "ICT (AK-AP)": (36, 42),
           }
           selected_range_name = st.selectbox(
@@ -460,11 +497,11 @@ if is_admin:
                       drop=True
                   )
 
-                sub_df["Subject"] = subject_name
+                sub_df["Subject"] = current_subject_key
                 if os.path.exists(QUESTIONS_FILE):
                   existing_q_df = pd.read_csv(QUESTIONS_FILE)
                   existing_q_df = existing_q_df[
-                      existing_q_df["Subject"] != subject_name
+                      existing_q_df["Subject"] != current_subject_key
                   ]
                   final_q_df = pd.concat(
                       [existing_q_df, sub_df], ignore_index=True
@@ -474,12 +511,12 @@ if is_admin:
                 final_q_df.to_csv(QUESTIONS_FILE, index=False)
 
                 config_df = pd.DataFrame(
-                    [{"Subject": subject_name, "Duration": exam_duration}]
+                    [{"Subject": current_subject_key, "Duration": exam_duration}]
                 )
                 if os.path.exists(CONFIG_FILE):
                   existing_conf = pd.read_csv(CONFIG_FILE)
                   existing_conf = existing_conf[
-                      existing_conf["Subject"] != subject_name
+                      existing_conf["Subject"] != current_subject_key
                   ]
                   final_conf = pd.concat(
                       [existing_conf, config_df], ignore_index=True
@@ -488,7 +525,7 @@ if is_admin:
                   final_conf = config_df
                 final_conf.to_csv(CONFIG_FILE, index=False)
                 st.success(
-                    f"✅ '{subject_name}' এর ফাইল থেকে {len(sub_df)}টি প্রশ্ন"
+                    f"✅ '{current_subject_key}' এর ফাইল থেকে {len(sub_df)}টি প্রশ্ন"
                     " সফলভাবে সেভ হয়েছে!"
                 )
                 st.rerun()
@@ -526,6 +563,7 @@ else:
         st.session_state["exam_submitted"] = False
         st.session_state["confirmed_student_name"] = ""
         st.session_state["selected_exam_subject"] = ""
+        st.session_state["selected_bio_chapter"] = ""
         st.session_state["exam_in_progress"] = False
         st.session_state["last_result_data"] = None
         st.rerun()
@@ -565,7 +603,7 @@ else:
           if is_correct and is_user:
             options_html += (
                 f"<div style='color: green; font-weight: bold;'>✅ {opt}"
-                " (আপনার সঠিক উত্তরী)</div>"
+                " (আপনার সঠিক উত্তর)</div>"
             )
           elif is_correct:
             options_html += (
@@ -644,6 +682,14 @@ else:
         st.subheader("📚 পরীক্ষার বিষয় নির্বাচন করুন")
         st.write("---")
 
+        # যদি কোনো সাবজেক্টের নিচে জীববিজ্ঞান অধ্যায় থাকে, সেগুলোকে active হিসেবে ধরবো
+        active_bio_sub_keys = [
+            s for s in active_subjects if s.startswith("জীববিজ্ঞান - ")
+        ]
+        other_active_subjects = [
+            s for s in active_subjects if not s.startswith("জীববিজ্ঞান - ")
+        ]
+
         cols_per_row = 3
         subject_chunks = [
             all_subjects_master[i : i + cols_per_row]
@@ -654,60 +700,122 @@ else:
           row_cols = st.columns(len(chunk))
           for idx, sub in enumerate(chunk):
             with row_cols[idx]:
-              is_running = sub in active_subjects
-
-              with st.container(border=True):
-                if is_running:
+              # সাধারণ বিষয়ের ক্ষেত্রে চেক
+              if sub != "জীববিজ্ঞান":
+                is_running = sub in other_active_subjects
+                with st.container(border=True):
+                  if is_running:
+                    st.markdown(
+                        f"<h4 style='margin: 0 0 4px 0; color: #1e3d59;"
+                        f" font-size: 16px; font-weight: bold; text-align:"
+                        f" center;'>{sub}</h4>",
+                        unsafe_allow_html=True,
+                    )
+                    st.markdown(
+                        "<p style='text-align: center; color: #137333;"
+                        " font-weight: bold; font-size: 13px; margin: 0 0 10px"
+                        " 0;'>🟢 পরীক্ষা আছে</p>",
+                        unsafe_allow_html=True,
+                    )
+                    if st.button(
+                        "শুরু করুন",
+                        key=f"btn_sub_{sub}",
+                        use_container_width=True,
+                        type="primary",
+                    ):
+                      current_typed_name = st.session_state.get(
+                          "confirmed_student_name", ""
+                      ).strip()
+                      if current_typed_name:
+                        st.session_state["selected_exam_subject"] = sub
+                        st.session_state["exam_start_time"] = time.time()
+                        st.session_state["exam_in_progress"] = True
+                        st.rerun()
+                      else:
+                        st.error(
+                            "⚠️ পরীক্ষা শুরু করতে প্রথমে উপরে আপনার নাম লিখে"
+                            " 'সাবমিট করুন' বাটনে চাপ দিন!"
+                        )
+                  else:
+                    st.markdown(
+                        f"<h4 style='margin: 0 0 4px 0; color: #5f6368;"
+                        f" font-size: 16px; font-weight: bold; text-align:"
+                        f" center;'>{sub}</h4>",
+                        unsafe_allow_html=True,
+                    )
+                    st.markdown(
+                        "<p style='text-align: center; color: #64748b;"
+                        " font-weight: bold; font-size: 13px; margin: 0 0 10px"
+                        " 0;'>⚪ পরীক্ষা নেই</p>",
+                        unsafe_allow_html=True,
+                    )
+                    st.button(
+                        "বন্ধ আছে",
+                        key=f"btn_sub_{sub}",
+                        use_container_width=True,
+                        disabled=True,
+                    )
+              else:
+                # জীববিজ্ঞানের ক্ষেত্রে কার্ড ও অধ্যায় সিলেক্ট করার ব্যবস্থা
+                is_bio_running = len(active_bio_sub_keys) > 0
+                with st.container(border=True):
                   st.markdown(
-                      f"<h4 style='margin: 0 0 4px 0; color: #1e3d59;"
-                      f" font-size: 16px; font-weight: bold; text-align:"
-                      f" center;'>{sub}</h4>",
+                      "<h4 style='margin: 0 0 4px 0; color: #1e3d59;"
+                      " font-size: 16px; font-weight: bold; text-align:"
+                      " center;'>জীববিজ্ঞান</h4>",
                       unsafe_allow_html=True,
                   )
-                  st.markdown(
-                      "<p style='text-align: center; color: #137333;"
-                      " font-weight: bold; font-size: 13px; margin: 0 0 10px"
-                      " 0;'>🟢 পরীক্ষা আছে</p>",
-                      unsafe_allow_html=True,
-                  )
-                  if st.button(
-                      "শুরু করুন",
-                      key=f"btn_sub_{sub}",
-                      use_container_width=True,
-                      type="primary",
-                  ):
-                    current_typed_name = st.session_state.get(
-                        "confirmed_student_name", ""
-                    ).strip()
-                    if current_typed_name:
-                      st.session_state["selected_exam_subject"] = sub
-                      st.session_state["exam_start_time"] = time.time()
-                      st.session_state["exam_in_progress"] = True
-                      st.rerun()
-                    else:
-                      st.error(
-                          "⚠️ পরীক্ষা শুরু করতে প্রথমে উপরে আপনার নাম লিখে"
-                          " 'সাবমিট করুন' বাটনে চাপ দিন!"
-                      )
-                else:
-                  st.markdown(
-                      f"<h4 style='margin: 0 0 4px 0; color: #5f6368;"
-                      f" font-size: 16px; font-weight: bold; text-align:"
-                      f" center;'>{sub}</h4>",
-                      unsafe_allow_html=True,
-                  )
-                  st.markdown(
-                      "<p style='text-align: center; color: #64748b;"
-                      " font-weight: bold; font-size: 13px; margin: 0 0 10px"
-                      " 0;'>⚪ পরীক্ষা নেই</p>",
-                      unsafe_allow_html=True,
-                  )
-                  st.button(
-                      "বন্ধ আছে",
-                      key=f"btn_sub_{sub}",
-                      use_container_width=True,
-                      disabled=True,
-                  )
+                  if is_bio_running:
+                    st.markdown(
+                        "<p style='text-align: center; color: #137333;"
+                        " font-weight: bold; font-size: 13px; margin: 0 0 5px"
+                        " 0;'>🟢 অধ্যায়ভিত্তিক পরীক্ষা আছে</p>",
+                        unsafe_allow_html=True,
+                    )
+                    # চালু থাকা অধ্যাগুলো ফিল্টার করে ড্রপডাউন দেখানো
+                    available_chapters = [
+                        s.replace("জীববিজ্ঞান - ", "")
+                        for s in active_bio_sub_keys
+                    ]
+                    chosen_ch = st.selectbox(
+                        "অধ্যায় বেছে নিন:",
+                        available_chapters,
+                        key="student_bio_ch_select",
+                    )
+                    if st.button(
+                        "জীববিজ্ঞানের পরীক্ষা শুরু করুন",
+                        key="btn_sub_biology_start",
+                        use_container_width=True,
+                        type="primary",
+                    ):
+                      current_typed_name = st.session_state.get(
+                          "confirmed_student_name", ""
+                      ).strip()
+                      if current_typed_name:
+                        st.session_state["selected_exam_subject"] = (
+                            f"জীববিজ্ঞান - {chosen_ch}"
+                        )
+                        st.session_state["exam_start_time"] = time.time()
+                        st.session_state["exam_in_progress"] = True
+                        st.rerun()
+                      else:
+                        st.error(
+                            "⚠️ পরীক্ষা শুরু করতে প্রথমে উপরে আপনার নাম লিখে"
+                            " 'সাবমিট করুন' বাটনে চাপ দিন!"
+                        )
+                  else:
+                    st.markdown(
+                        "<p style='text-align: center; color: #64748b;"
+                        " font-weight: bold; font-size: 13px; margin: 0 0 10px"
+                        " 0;'>⚪ পরীক্ষা নেই</p>",
+                        unsafe_allow_html=True,
+                    )
+                    st.button(
+                        "বন্ধ আছে",
+                        key="btn_sub_biology_disabled",
+                        use_container_width=True,
+                        disabled=True,
+                    )
       else:
         selected_subject = st.session_state.get(
             "selected_exam_subject", active_subjects[0]
