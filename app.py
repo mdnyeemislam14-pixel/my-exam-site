@@ -3,7 +3,13 @@ from datetime import datetime
 import os
 import pandas as pd
 import streamlit as st
-from streamlit_autorefresh import st_autorefresh
+
+# Safe import for autorefresh library to prevent ModuleNotFoundError
+try:
+    from streamlit_autorefresh import st_autorefresh
+    has_autorefresh = True
+except ImportError:
+    has_autorefresh = False
 
 # File paths and configuration constants placeholder
 RESULT_FILE = "exam_results.csv"
@@ -302,14 +308,18 @@ else:
                 st.session_state["exam_start_time"] = time.time()
                 st.session_state["current_sub"] = selected_subject
 
-            # অটো-রিফ্রেশ ট্রিগার (প্রতি ১ সেকেন্ড পর পর পেজ রিফ্রেশ করে টাইমার আপডেট করবে)
-            count = st_autorefresh(interval=1000, limit=total_seconds, key="exam_live_timer")
+            # লাইভ টাইমার আপডেট করার জন্য রিফ্রেশ হ্যান্ডলিং
+            if has_autorefresh:
+                count = st_autorefresh(interval=1000, limit=total_seconds, key="exam_live_timer")
+            else:
+                count = int(time.time() - st.session_state["exam_start_time"])
+
             elapsed_seconds = int(time.time() - st.session_state["exam_start_time"])
             remaining_seconds = max(0, total_seconds - elapsed_seconds)
 
             mins, secs = divmod(remaining_seconds, 60)
 
-            # সুন্দর ডিজাইনযুক্ত স্টিকি ইনফো বার (মোট নম্বর, মোট সময় ও লাইভ টাইমার প্রদর্শনের জন্য)
+            # স্টাইলিশ হেডার বার (বিষয়, মোট নম্বর, মোট সময় এবং বাকি সময় দেখানোর জন্য)
             st.markdown(
                 f"""
                 <style>
@@ -368,11 +378,10 @@ else:
             st.markdown(f"**পরীক্ষার্থী:** {current_student}")
             st.write("---")
 
-            # সময় শেষ হয়ে গেলে স্বয়ংক্রিয়ভাবে খাতা সাবমিট করার লজিক
+            # সময় শেষ হলে স্বয়ংক্রিয়ভাবে খাতা সাবমিট করার লজিক
             if remaining_seconds == 0 and not st.session_state.get("exam_submitted", False):
                 st.warning("⏰ আপনার পরীক্ষার নির্ধারিত সময় শেষ! আপনার খাতাটি স্বয়ংক্রিয়ভাবে জমা হয়ে গেছে।")
                 time.sleep(1.5)
-                # স্বয়ংক্রিয় জমার জন্য ডিফল্ট স্কোর বা সাবমিশন প্রসেস ট্রিগার করা হচ্ছে
                 st.session_state["exam_submitted"] = True
                 st.session_state["exam_in_progress"] = False
                 st.rerun()
