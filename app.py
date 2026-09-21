@@ -834,12 +834,16 @@ else:
                     st.session_state["exam_start_time"] = time.time()
                     st.session_state["current_sub"] = selected_subject
 
+                # ব্যাকএন্ডের জন্য অটো-রিফ্রেশ ট্রিগার (প্রতি ১ সেকেন্ড পর পর পেজ রিফ্রেশ করে ব্যাকএন্ড সময় হিসাব রাখবে)
+                if has_autorefresh:
+                    st_autorefresh(interval=1000, limit=total_seconds, key="exam_live_timer")
+
                 elapsed_seconds = int(time.time() - st.session_state["exam_start_time"])
                 remaining_seconds = max(0, total_seconds - elapsed_seconds)
 
                 mins, secs = divmod(remaining_seconds, 60)
 
-                # জাভাস্ক্রিপ্ট লাইভ কাউন্টডাউন সহ স্টাইলিশ ইনফো বার
+                # ব্রাউজারে রিয়েল-টাইম টাইম কমার জন্য নিখুঁত জাভাস্ক্রিপ্ট টাইমার ও অটো-সাবমিট কোড
                 st.markdown(
                     f"""
                     <style>
@@ -898,6 +902,8 @@ else:
                             if (totalSecs <= 0) {{
                                 clearInterval(timerInterval);
                                 document.getElementById('live-timer').innerText = "সময় শেষ!";
+                                // সময় শেষ হলে স্বয়ংক্রিয়ভাবে সাবমিট বাটন ক্লিক করানোর জন্য রিফ্রেশ ট্রিগার
+                                window.location.reload();
                             }} else {{
                                 totalSecs--;
                                 let m = Math.floor(totalSecs / 60);
@@ -914,11 +920,58 @@ else:
                 st.markdown(f"**পরীক্ষার্থী:** {current_student}")
                 st.write("---")
 
+                # সময় শেষ হয়ে গেলে সার্ভারে স্বয়ংক্রিয়ভাবে খাতা জমা করার লজিক
                 if remaining_seconds == 0 and not st.session_state.get("exam_submitted", False):
-                    st.warning("⏰ আপনার পরীক্ষার নির্ধারিত সময় শেষ! আপনার খাতাটি স্বয়ংক্রিয়ভাবে জমা হয়ে গেছে।")
-                    time.sleep(1.5)
+                    # এন্সার দাগাক বা না দাগাক, যা সিলেক্ট করা আছে বা ফাঁকা আছে তাই নিয়ে মার্কস জেনারেট হবে
+                    score = 0
+                    user_answers = st.session_state.get("current_user_answers", {})
+                    for i, row in active_df.iterrows():
+                        ans = user_answers.get(i)
+                        raw_correct = str(row["Correct_Answer"]).strip()
+                        opts = [
+                            str(row["Option_A"]).strip(),
+                            str(row["Option_B"]).strip(),
+                            str(row["Option_C"]).strip(),
+                            str(row["Option_D"]).strip(),
+                        ]
+                        correct_val = raw_correct
+                        for opt in opts:
+                            if raw_correct.lower() in opt.lower():
+                                correct_val = opt
+                                break
+                        if ans and (ans == correct_val or raw_correct.lower() in ans.lower()):
+                            score += 1
+
+                    total_q = len(active_df)
+                    result_entry = pd.DataFrame([{
+                        "Student_Name": current_student,
+                        "Subject": selected_subject,
+                        "Score": score,
+                        "Total": total_q,
+                        "Date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    }])
+
+                    if os.path.exists(RESULT_FILE):
+                        res_df_existing = pd.read_csv(RESULT_FILE)
+                        final_res_df = pd.concat(
+                            [res_df_existing, result_entry], ignore_index=True
+                        )
+                    else:
+                        final_res_df = result_entry
+                    final_res_df.to_csv(RESULT_FILE, index=False)
+
                     st.session_state["exam_submitted"] = True
                     st.session_state["exam_in_progress"] = False
+                    st.session_state["last_result_data"] = {
+                        "student_name": current_student,
+                        "subject": selected_subject,
+                        "score": score,
+                        "total": total_q,
+                        "active_df": active_df,
+                        "user_answers": user_answers,
+                    }
+                    st.warning("⏰ আপনার পরীক্ষার নির্ধারিত সময় শেষ! খাতা স্বয়ংক্রিয়ভাবে জমা হয়ে গেছে।")
+                    time.sleep(1.5)
                     st.rerun()
 
                 user_answers = {}
