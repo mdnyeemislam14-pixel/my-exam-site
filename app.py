@@ -834,15 +834,12 @@ else:
                     st.session_state["exam_start_time"] = time.time()
                     st.session_state["current_sub"] = selected_subject
 
-                if has_autorefresh:
-                    st_autorefresh(interval=1000, limit=total_seconds, key="exam_live_timer")
-
                 elapsed_seconds = int(time.time() - st.session_state["exam_start_time"])
                 remaining_seconds = max(0, total_seconds - elapsed_seconds)
 
                 mins, secs = divmod(remaining_seconds, 60)
 
-                # স্টাইলিশ ইনফো বার (মোট নম্বর, মোট সময় ও বাকি সময়)
+                # জাভাস্ক্রিপ্ট লাইভ কাউন্টডাউন সহ স্টাইলিশ ইনফো বার
                 st.markdown(
                     f"""
                     <style>
@@ -891,9 +888,25 @@ else:
                         </div>
                         <div class="exam-header-item" style="background: rgba(255, 75, 75, 0.4); border-radius: 6px;">
                             <div class="exam-header-title">⏳ বাকি সময়</div>
-                            <div class="exam-header-value" style="color: #ffeb3b;">{mins:02d}:{secs:02d} মিনিট</div>
+                            <div class="exam-header-value" id="live-timer" style="color: #ffeb3b;">{mins:02d}:{secs:02d} মিনিট</div>
                         </div>
                     </div>
+
+                    <script>
+                        let totalSecs = {remaining_seconds};
+                        const timerInterval = setInterval(function() {{
+                            if (totalSecs <= 0) {{
+                                clearInterval(timerInterval);
+                                document.getElementById('live-timer').innerText = "সময় শেষ!";
+                            }} else {{
+                                totalSecs--;
+                                let m = Math.floor(totalSecs / 60);
+                                let s = totalSecs % 60;
+                                let formatted = String(m).padStart(2, '0') + ":" + String(s).padStart(2, '0') + " মিনিট";
+                                document.getElementById('live-timer').innerText = formatted;
+                            }}
+                        }}, 1000);
+                    </script>
                     """,
                     unsafe_allow_html=True,
                 )
