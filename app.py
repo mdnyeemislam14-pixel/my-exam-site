@@ -341,15 +341,27 @@ if is_admin:
         )
 
         if input_mode == "টেক্সট পেস্ট (Easy Paste)":
+            # পূর্বে সেভ করা প্রশ্নগুলো লোড করে টেক্সট ফরমেটে রূপান্তর করা যাতে বক্সে দেখা যায়
+            existing_text_for_subject = ""
+            if not saved_q_df.empty and "Subject" in saved_q_df.columns:
+                sub_matched_df = saved_q_df[saved_q_df["Subject"] == current_subject_key]
+                if not sub_matched_df.empty:
+                    block_list = []
+                    for _, r in sub_matched_df.iterrows():
+                        q_block = f"{r['Question']}\n{r['Option_A']}\n{r['Option_B']}\n{r['Option_C']}\n{r['Option_D']}\nউত্তর: {r['Correct_Answer']}\nব্যাখ্যা: {r['Explanation']}"
+                        block_list.append(q_block)
+                    existing_text_for_subject = "\n\n".join(block_list)
+
             pasted_text = st.text_area(
-                "প্রশ্ন পেস্ট করুন (নতুন প্রশ্ন যোগ করতে চাইলে আগের গুলোর নিচে বা নতুন করে দিন):",
-                height=200,
+                f"'{current_subject_key}'-এর সংরক্ষিত প্রশ্নসমূহ (এখানে দেখতে পাবেন, নতুন যোগ করতে চাইলে নিচে লিখতে পারেন):",
+                value=existing_text_for_subject,
+                height=250,
                 placeholder=(
                     "১. প্রশ্ন...\nক) ...\nখ) ...\nগ) ...\nঘ) ...\nউত্তর: ক"
                 ),
             )
 
-            if st.button("📌 এই বিষয়ের প্রশ্ন সেভ/যুক্ত করুন"):
+            if st.button("📌 এই বিষয়ের প্রশ্ন সেভ/আপডেট করুন"):
                 if not pasted_text:
                     st.error("⚠️ প্রশ্ন দিন।")
                 else:
@@ -409,7 +421,10 @@ if is_admin:
                         new_df = pd.DataFrame(parsed_questions)
                         if os.path.exists(QUESTIONS_FILE):
                             existing_q_df = pd.read_csv(QUESTIONS_FILE)
-                            # Append instead of replacing completely, so existing questions remain!
+                            # বর্তমান সাবজেক্টের পুরোনো প্রশ্ন বাদ দিয়ে নতুন ও আপডেট করা প্রশ্নগুলো একবারে বসিয়ে দেওয়া হলো
+                            existing_q_df = existing_q_df[
+                                existing_q_df["Subject"] != current_subject_key
+                            ]
                             final_q_df = pd.concat(
                                 [existing_q_df, new_df], ignore_index=True
                             )
@@ -433,7 +448,7 @@ if is_admin:
                             final_conf = config_df
                         final_conf.to_csv(CONFIG_FILE, index=False)
                         st.success(
-                            f"✅ '{current_subject_key}' এর জন্য সফলভাবে প্রশ্ন যুক্ত ও সেভ হয়েছে!"
+                            f"✅ '{current_subject_key}' এর প্রশ্নসমূহ সফলভাবে আপডেট ও সেভ হয়েছে!"
                         )
                         st.rerun()
 
@@ -530,6 +545,9 @@ if is_admin:
                                 sub_df["Subject"] = current_subject_key
                                 if os.path.exists(QUESTIONS_FILE):
                                     existing_q_df = pd.read_csv(QUESTIONS_FILE)
+                                    existing_q_df = existing_q_df[
+                                        existing_q_df["Subject"] != current_subject_key
+                                    ]
                                     final_q_df = pd.concat(
                                         [existing_q_df, sub_df], ignore_index=True
                                     )
